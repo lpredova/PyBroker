@@ -22,7 +22,7 @@ class StockExchange(Agent):
 
         def initialize(self):
             self.ip = self.getName().split(" ")[0]
-            self.stock = self.generate_stock()
+            self.stock = self.stock_generate()
 
         def open_stock_exchange(self):
             msg_sign_in_to_stock_exchange = json.dumps(
@@ -44,6 +44,17 @@ class StockExchange(Agent):
 
             self.send_message(msg_sign_in_to_stock_exchange, origin_ip)
 
+        def send_close_stock_exchange(self):
+            msg_sign_in_to_stock_exchange = json.dumps(
+                {'request_type': 'stock_close',
+                 'data': None,
+                 'origin': self.ip
+                 }
+            )
+
+            self.broadcast_message(msg_sign_in_to_stock_exchange)
+            self.kill()
+
         def _process(self):
             self.initialize()
             self.msg = self._receive(True)
@@ -64,15 +75,10 @@ class StockExchange(Agent):
                 if request['request_type'] == 'stock_report':
                     self.send_stock_exchange_report(request['origin'])
 
-                if request['request_type'] == 'request_two':
-                    print "msg"
-
-                if request['request_type'] == 'request_three':
-                    print "msg"
-
-                if request['request_type'] == 'request_four':
-                    print "msg"
-
+                # Declare winner and close the stock exchange
+                if request['request_type'] == 'stock_win':
+                    print "Broker %s got rich. Closing stock exchange..." % request['origin']
+                    self.send_close_stock_exchange()
                 else:
                     pass
 
@@ -104,15 +110,18 @@ class StockExchange(Agent):
             self.myAgent.send(self.msg)
             print '\nMessage %s sent to %s' % (message, address)
 
-        def generate_stock(self):
+        def stock_generate(self):
             result = []
             number_of_stocks = random.randint(3, 5)
             for i in range(0, number_of_stocks):
+                price = random.randint(10, 1000)
                 result.append(
                     {
+                        'id': i + 1,
                         'name': ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(3)),
-                        'price': random.randint(10, 1000),
+                        'price': price,
                         'numberOfStocks': 10000,
+                        'totalValue': 10000 * price,
                         'tendency': random.choice(
                             [None, 'up', 'down', 'stale', 'up fast', 'up slow', 'down fast', 'down fast']),
                         'owners': []
@@ -120,6 +129,15 @@ class StockExchange(Agent):
                 )
 
             return result
+
+        # Method that allows trading certain amounts of stocks
+        def stock_trade(self):
+            print "Method that allows trading certain amounts of stocks -> returns amount of money spent or earned"
+
+
+        # Method that changes prices of generated stocks according with tendency
+        def stock_speculate(self):
+            print "Metohd that changes prices of generated stocks"
 
     def _setup(self):
         print "\nVAS Stock exchange\t%s\tis up" % self.getAID().getAddresses()

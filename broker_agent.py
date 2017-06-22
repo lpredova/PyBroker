@@ -21,6 +21,8 @@ class BrokerAgent(Agent):
         msg = None
         budget = None
 
+        myStocks = []
+
         def initialize(self):
             self.ip = self.getName().split(" ")[0]
             self.budget = random.randint(10000, 50000)
@@ -47,6 +49,16 @@ class BrokerAgent(Agent):
             )
             self.send_message_to_stock(msg_stock_exchange_report)
 
+        def delcate_win(self):
+            msg_stock_win = json.dumps(
+                {'request_type': 'stock_win',
+                 'data': None,
+                 'origin': self.ip
+                 }
+            )
+
+            self.send_message_to_stock(msg_stock_win)
+
         def _process(self):
             self.initialize()
             self.sign_in()
@@ -61,9 +73,14 @@ class BrokerAgent(Agent):
                 if request['request_type'] == 'stock_report_data':
                     self.evaluate_stock_state(request['data'])
 
+                if request['request_type'] == 'stock_close':
+                    print 'Agent %s stopped trading, Won %d$' % (self.ip, self.budget)
+                    self.kill()
+
         def evaluate_stock_state(self, stock_data):
             print "evaluation stock exchange state"
             print stock_data
+            self.delcate_win()
 
         def send_message_to_agent(self, content):
 
