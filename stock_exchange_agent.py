@@ -89,6 +89,14 @@ class StockExchange(Agent):
                 if request['request_type'] == 'stock_report':
                     self.send_stock_exchange_report(request['origin'])
 
+                # Buy stock
+                if request['request_type'] == 'stock_buy':
+                    self.buy_stock(request)
+
+                # Sell stock
+                if request['request_type'] == 'stock_sell':
+                    self.sell_stock(request)
+
                 # Declare winner and close the stock exchange
                 if request['request_type'] == 'stock_win':
                     print "Broker %s got rich. Closing stock exchange..." % request['origin']
@@ -124,6 +132,7 @@ class StockExchange(Agent):
             self.myAgent.send(self.msg)
             print '\nMessage %s sent to %s' % (message, address)
 
+        # Initialize stocks
         def stock_generate(self):
             result = []
             number_of_stocks = random.randint(3, 5)
@@ -145,8 +154,24 @@ class StockExchange(Agent):
             return result
 
         # Method that allows trading certain amounts of stocks
-        def stock_trade(self):
-            print "Method that allows trading certain amounts of stocks -> returns amount of money spent or earned"
+        def buy_stock(self, data):
+
+            price = data['stocksToBuy'] * data['data']['price']
+            self.stock_add_owner(data['data'], price, data['stocksToBuy'], data['origin'])
+            print "%s bought %d shares %s for %d" % (data['origin'], data['stocksToBuy'], data['data']['name'], price)
+            # send info to broker
+
+
+
+        def sell_stock(self, data):
+
+            price = data['stocksToSell'] * data['data']['price']
+
+            self.stock_remove_owner(data['data'], price, data['stocksToSell'], data['origin'])
+            print "%s sold %d shares %s for %d" % (data['origin'], data['stocksToBuy'], data['data']['name'], price)
+            # send info to broker
+
+
 
         # Method that changes prices of generated stocks according with tendency
         def stock_speculate(self):
@@ -207,6 +232,33 @@ class StockExchange(Agent):
                     owner['totalPrice'] = owner['totalPrice'] * owner['numberOfShares']
 
                     self.inform_owner_change(stock, owner['ip'])
+
+        def stock_add_owner(self, stock, total_price, shares, ip):
+            for old_stock in self.stocks:
+                if old_stock['id'] == stock['id']:
+                    old_stock['shares'] -= shares
+
+                    owners = old_stock['owners']
+                    owners.append({
+                        'ip': ip,
+                        'price': total_price,
+                        'shares': shares,
+                    })
+
+                    old_stock['owners'] = owners
+
+        def stock_remove_owner(self, stock, total_price, shares, ip):
+            for old_stock in self.stocks:
+                if old_stock['id'] == stock['id']:
+                    old_stock['shares'] += shares
+
+                    owners = old_stock['owners']
+                    new = []
+                    for o in owners:
+                        if o['ip'] != ip:
+                            new.append(o)
+
+                    old_stock['owners'] = new
 
     def _setup(self):
         print "\nVAS Stock exchange\t%s\tis up" % self.getAID().getAddresses()

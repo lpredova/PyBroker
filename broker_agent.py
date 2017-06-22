@@ -33,29 +33,43 @@ class BrokerAgent(Agent):
 
         def sign_in(self):
             msg_sign_in_to_stock_exchange = json.dumps(
-                {'request_type': 'stock_sign_in',
-                 'data': None,
-                 'origin': self.ip
-                 }
+                {
+                    'request_type': 'stock_sign_in',
+                    'data': None,
+                    'origin': self.ip
+                }
             )
 
             self.send_message_to_stock(msg_sign_in_to_stock_exchange)
 
         def ask_for_report(self):
             msg_stock_exchange_report = json.dumps(
-                {'request_type': 'stock_report',
-                 'data': None,
-                 'origin': self.ip
-                 }
+                {
+                    'request_type': 'stock_report',
+                    'data': None,
+                    'origin': self.ip
+                }
             )
             self.send_message_to_stock(msg_stock_exchange_report)
 
+        def buy_stock(self, stock, number_of_stocks_to_sell):
+            msg_stock_to_buy = json.dumps(
+                {
+                    'request_type': 'stock_buy',
+                    'data': stock,
+                    'origin': self.ip,
+                    'stocksToSell': number_of_stocks_to_sell
+                }
+            )
+            self.send_message_to_stock(msg_stock_to_buy)
+
         def declare_win(self):
             msg_stock_win = json.dumps(
-                {'request_type': 'stock_win',
-                 'data': None,
-                 'origin': self.ip
-                 }
+                {
+                    'request_type': 'stock_win',
+                    'data': None,
+                    'origin': self.ip
+                }
             )
 
             self.send_message_to_stock(msg_stock_win)
@@ -73,6 +87,14 @@ class BrokerAgent(Agent):
 
                 if request['request_type'] == 'stock_report_data':
                     self.evaluate_stock_state(request['data'])
+
+                if request['request_type'] == 'stock_bought':
+                    # self.evaluate_stock_state(request['data'])
+                    pass
+
+                if request['request_type'] == 'stock_sold':
+                    # self.evaluate_stock_state(request['data'])
+                    pass
 
                 if request['request_type'] == 'stock_close':
                     print 'Agent %s stopped trading, Won %d$' % (self.ip, self.budget)
@@ -93,10 +115,10 @@ class BrokerAgent(Agent):
                         if take_action_odds < 80:
                             # spend max 40% of my money on this stock and buy all stocks"
                             if action == 'buy' and not self.check_if_i_own_stock(stock):
-                                self.buy_stock(40, stock)
+                                self.buy_stock_evaluation(40, stock)
 
                             if action == 'sell' and self.check_if_i_own_stock(stock):
-                                self.sell_stock(40, stock)
+                                self.sell_stock_evaluation(40, stock)
 
                     if self.behaviour == 'cautious':
                         # takes action in 40 % of cases
@@ -108,32 +130,37 @@ class BrokerAgent(Agent):
                                          or stock['tendency'] == 'up fast'
                                          or stock['tendency'] == 'up slow'
                                          or stock['tendency'] == 'stale'):
-                                self.buy_stock(10, stock)
+                                self.buy_stock_evaluation(10, stock)
 
                             if action == 'sell' \
                                     and self.check_if_i_own_stock(stock) \
                                     and (stock['tendency'] == 'down'
                                          or stock['tendency'] == 'down fast'
                                          or stock['tendency'] == 'down slow'):
-                                self.sell_stock(10, stock)
+                                self.sell_stock_evaluation(10, stock)
 
                     if self.behaviour == 'passive':
                         # takes action in 20 % of cases
                         if take_action_odds < 20:
                             # spend max 10% of my money on stock but rather pass buy all kinds of stocks"
                             if action == 'buy' and not self.check_if_i_own_stock(stock):
-                                self.buy_stock(40, stock)
+                                self.buy_stock_evaluation(40, stock)
 
                             if action == 'sell' and self.check_if_i_own_stock(stock):
-                                self.sell_stock(40, stock)
+                                self.sell_stock_evaluation(40, stock)
 
                 self.declare_win()
 
-        def buy_stock(self, max_percentage, stock):
+        def buy_stock_evaluation(self, max_percentage, stock):
 
-            print "buying stock"
+            if stock['numberOfStocks'] > 0:
+                budget_percentage = random.randint(0, max_percentage) / 100
+                money_to_spend = self.budget * budget_percentage
 
-        def sell_stock(self, max_percentage, stock):
+                number_of_stocks = money_to_spend % stock['price']
+                self.buy_stock(stock, number_of_stocks)
+
+        def sell_stock_evaluation(self, max_percentage, stock):
             print "sell stock, if not direct offer from another agent then selling price will be loer"
 
         def check_if_i_own_stock(self, stock):
