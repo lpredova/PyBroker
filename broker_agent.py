@@ -52,16 +52,27 @@ class BrokerAgent(Agent):
             )
             self.send_message_to_stock(msg_stock_exchange_report)
 
-        def buy_stock(self, stock, number_of_stocks_to_sell):
+        def buy_stock(self, stock, number_of_stocks_to_buy):
             msg_stock_to_buy = json.dumps(
                 {
                     'request_type': 'stock_buy',
                     'data': stock,
                     'origin': self.ip,
-                    'stocksToSell': number_of_stocks_to_sell
+                    'stocksToBuy': number_of_stocks_to_buy
                 }
             )
             self.send_message_to_stock(msg_stock_to_buy)
+
+        def sell_stock(self, stock, number_of_stocks_to_sell):
+            msg_stock_to_sell = json.dumps(
+                {
+                    'request_type': 'stock_sell',
+                    'data': stock,
+                    'origin': self.ip,
+                    'stocksToSell': number_of_stocks_to_sell
+                }
+            )
+            self.send_message_to_stock(msg_stock_to_sell)
 
         def declare_win(self):
             msg_stock_win = json.dumps(
@@ -89,12 +100,10 @@ class BrokerAgent(Agent):
                     self.evaluate_stock_state(request['data'])
 
                 if request['request_type'] == 'stock_bought':
-                    # self.evaluate_stock_state(request['data'])
-                    pass
+                    self.add_to_my_stocks(request)
 
                 if request['request_type'] == 'stock_sold':
-                    # self.evaluate_stock_state(request['data'])
-                    pass
+                    self.remove_from_my_stocks(request)
 
                 if request['request_type'] == 'stock_close':
                     print 'Agent %s stopped trading, Won %d$' % (self.ip, self.budget)
@@ -118,7 +127,7 @@ class BrokerAgent(Agent):
                                 self.buy_stock_evaluation(40, stock)
 
                             if action == 'sell' and self.check_if_i_own_stock(stock):
-                                self.sell_stock_evaluation(40, stock)
+                                self.sell_stock_evaluation(stock)
 
                     if self.behaviour == 'cautious':
                         # takes action in 40 % of cases
@@ -137,7 +146,7 @@ class BrokerAgent(Agent):
                                     and (stock['tendency'] == 'down'
                                          or stock['tendency'] == 'down fast'
                                          or stock['tendency'] == 'down slow'):
-                                self.sell_stock_evaluation(10, stock)
+                                self.sell_stock_evaluation(stock)
 
                     if self.behaviour == 'passive':
                         # takes action in 20 % of cases
@@ -147,7 +156,7 @@ class BrokerAgent(Agent):
                                 self.buy_stock_evaluation(40, stock)
 
                             if action == 'sell' and self.check_if_i_own_stock(stock):
-                                self.sell_stock_evaluation(40, stock)
+                                self.sell_stock_evaluation(stock)
 
                 self.declare_win()
 
@@ -160,8 +169,13 @@ class BrokerAgent(Agent):
                 number_of_stocks = money_to_spend % stock['price']
                 self.buy_stock(stock, number_of_stocks)
 
-        def sell_stock_evaluation(self, max_percentage, stock):
-            print "sell stock, if not direct offer from another agent then selling price will be loer"
+        def sell_stock_evaluation(self, stock):
+
+            if stock['numberOfStocks'] > 0:
+                for s in self.myStocks:
+                    # find that stock in list of my stocks and sell it
+                    if s['id'] != stock['id']:
+                        self.sell_stock(stock, s['number'])
 
         def check_if_i_own_stock(self, stock):
             for myStock in self.myStocks:
@@ -169,6 +183,25 @@ class BrokerAgent(Agent):
                     return True
 
             return False
+
+        def add_to_my_stocks(self, data):
+            self.myStocks.append({
+                'ip': data['origin'],
+                'data': data['origin'],
+                'price': data['price'],
+                'number': data['price'],
+            })
+            self.budget -= data['price']
+
+        def remove_from_my_stocks(self, data):
+            clean = []
+
+            for stock in self.myStocks:
+                if stock['id'] != data['data']['id']:
+                    clean.append(stock)
+
+            self.myStocks = clean
+            self.budget += data['price']
 
         def send_message_to_agent(self, content):
 

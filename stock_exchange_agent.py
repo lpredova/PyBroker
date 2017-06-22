@@ -27,10 +27,11 @@ class StockExchange(Agent):
         # Sends signal that stock exchange is opened for business
         def open_stock_exchange(self):
             msg_sign_in_to_stock_exchange = json.dumps(
-                {'request_type': 'stock_open',
-                 'data': None,
-                 'origin': self.ip
-                 }
+                {
+                    'request_type': 'stock_open',
+                    'data': None,
+                    'origin': self.ip
+                }
             )
 
             self.broadcast_message(msg_sign_in_to_stock_exchange)
@@ -38,10 +39,11 @@ class StockExchange(Agent):
         # Sends stock exchange state to brokers
         def send_stock_exchange_report(self, origin_ip):
             msg_sign_in_to_stock_exchange = json.dumps(
-                {'request_type': 'stock_report_data',
-                 'data': json.dumps(self.stocks),
-                 'origin': self.ip
-                 }
+                {
+                    'request_type': 'stock_report_data',
+                    'data': json.dumps(self.stocks),
+                    'origin': self.ip
+                }
             )
 
             self.send_message(msg_sign_in_to_stock_exchange, origin_ip)
@@ -49,21 +51,50 @@ class StockExchange(Agent):
         # Informs owner that his stock has changed price
         def inform_owner_change(self, stock, origin_ip):
             msg_owner_share_change = json.dumps(
-                {'request_type': 'stock_share_change',
-                 'data': json.dumps(stock),
-                 'origin': self.ip
-                 }
+                {
+                    'request_type': 'stock_share_change',
+                    'data': json.dumps(stock),
+                    'origin': self.ip
+                }
             )
 
             self.send_message(msg_owner_share_change, origin_ip)
 
+        def send_buy_confirmation(self, stock, origin_ip, price, amount):
+            msg_owner_buy_confirm = json.dumps(
+                {
+                    'request_type': 'stock_bought',
+                    'data': json.dumps(stock),
+                    'origin': self.ip,
+                    'price': price,
+                    'amount': amount
+                }
+            )
+
+            self.send_message(msg_owner_buy_confirm, origin_ip)
+
+        def send_sell_confirmation(self, stock, origin_ip, price, amount):
+            msg_owner_sell_confirm = json.dumps(
+                {
+                    'request_type': 'stock_sold',
+                    'data': json.dumps(stock),
+                    'origin': self.ip,
+                    'price': price,
+                    'amount': amount
+
+                }
+            )
+
+            self.send_message(msg_owner_sell_confirm, origin_ip)
+
         # Closes stock exchange, we have our winner
         def send_close_stock_exchange(self):
             msg_sign_in_to_stock_exchange = json.dumps(
-                {'request_type': 'stock_close',
-                 'data': None,
-                 'origin': self.ip
-                 }
+                {
+                    'request_type': 'stock_close',
+                    'data': None,
+                    'origin': self.ip
+                }
             )
 
             self.broadcast_message(msg_sign_in_to_stock_exchange)
@@ -155,23 +186,18 @@ class StockExchange(Agent):
 
         # Method that allows trading certain amounts of stocks
         def buy_stock(self, data):
-
             price = data['stocksToBuy'] * data['data']['price']
             self.stock_add_owner(data['data'], price, data['stocksToBuy'], data['origin'])
             print "%s bought %d shares %s for %d" % (data['origin'], data['stocksToBuy'], data['data']['name'], price)
             # send info to broker
-
-
+            self.send_buy_confirmation(data['data'], data['origin'], price, data['stocksToBuy'])
 
         def sell_stock(self, data):
-
             price = data['stocksToSell'] * data['data']['price']
-
-            self.stock_remove_owner(data['data'], price, data['stocksToSell'], data['origin'])
-            print "%s sold %d shares %s for %d" % (data['origin'], data['stocksToBuy'], data['data']['name'], price)
+            self.stock_remove_owner(data['data'], price, data['origin'])
+            print "%s sold %d shares %s for %d" % (data['origin'], data['stocksToSell'], data['data']['name'], price)
             # send info to broker
-
-
+            self.send_sell_confirmation(data['data'], data['origin'], price, data['stocksToSell'])
 
         # Method that changes prices of generated stocks according with tendency
         def stock_speculate(self):
@@ -247,7 +273,7 @@ class StockExchange(Agent):
 
                     old_stock['owners'] = owners
 
-        def stock_remove_owner(self, stock, total_price, shares, ip):
+        def stock_remove_owner(self, stock, shares, ip):
             for old_stock in self.stocks:
                 if old_stock['id'] == stock['id']:
                     old_stock['shares'] += shares
