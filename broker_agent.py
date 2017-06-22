@@ -50,7 +50,7 @@ class BrokerAgent(Agent):
             )
             self.send_message_to_stock(msg_stock_exchange_report)
 
-        def delcate_win(self):
+        def declare_win(self):
             msg_stock_win = json.dumps(
                 {'request_type': 'stock_win',
                  'data': None,
@@ -80,33 +80,60 @@ class BrokerAgent(Agent):
 
         def evaluate_stock_state(self, stock_data):
             if self.budget >= self.win_threshold:
-                self.delcate_win()
+                self.declare_win()
 
             else:
                 for stock in stock_data:
+                    # buy or wait or sell
+                    take_action_odds = random.randint(0, 100)
+                    action = random.choice(['buy', 'sell', 'stale'])
 
-                    if not self.check_if_i_own_stock(stock):
-                        # buy or wait or sell
-                        if self.behaviour == 'risky':
-                            print "spend max 40% of my money on stock and take into account various stocks"
+                    if self.behaviour == 'risky':
+                        # takes action in 80 % of cases
+                        if take_action_odds < 80:
+                            # spend max 40% of my money on this stock and buy all stocks"
+                            if action == 'buy' and not self.check_if_i_own_stock(stock):
+                                self.buy_stock(40, stock)
 
-                        if self.behaviour == 'passive':
-                            print "spend max 10% of my money on stock but rather pass buy all kinds of stocks"
+                            if action == 'sell' and self.check_if_i_own_stock(stock):
+                                self.sell_stock(40, stock)
 
-                        if self.behaviour == 'cautious':
-                            print "spend max 10% of my money on stock and buy only growing or stabile"
+                    if self.behaviour == 'cautious':
+                        # takes action in 40 % of cases
+                        if take_action_odds < 40:
+                            # spend max 10% of my money on stock and buy only growing or stable"
+                            if action == 'buy' \
+                                    and not self.check_if_i_own_stock(stock) \
+                                    and (stock['tendency'] == 'up'
+                                         or stock['tendency'] == 'up fast'
+                                         or stock['tendency'] == 'up slow'
+                                         or stock['tendency'] == 'stale'):
+                                self.buy_stock(10, stock)
 
+                            if action == 'sell' \
+                                    and self.check_if_i_own_stock(stock) \
+                                    and (stock['tendency'] == 'down'
+                                         or stock['tendency'] == 'down fast'
+                                         or stock['tendency'] == 'down slow'):
+                                self.sell_stock(10, stock)
 
+                    if self.behaviour == 'passive':
+                        # takes action in 20 % of cases
+                        if take_action_odds < 20:
+                            # spend max 10% of my money on stock but rather pass buy all kinds of stocks"
+                            if action == 'buy' and not self.check_if_i_own_stock(stock):
+                                self.buy_stock(40, stock)
 
-                # check if I own this stock, if not then consider buying
+                            if action == 'sell' and self.check_if_i_own_stock(stock):
+                                self.sell_stock(40, stock)
 
+                self.declare_win()
 
-                self.delcate_win()
+        def buy_stock(self, max_percentage, stock):
 
-        def buy_stock(self):
             print "buying stock"
 
-        def sell_stock(self):
+        def sell_stock(self, max_percentage, stock):
             print "sell stock, if not direct offer from another agent then selling price will be loer"
 
         def check_if_i_own_stock(self, stock):
