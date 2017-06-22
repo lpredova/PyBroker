@@ -57,7 +57,7 @@ class StockExchange(Agent):
                     self.brokers += 1
 
                     # All brokers are registrated
-                    if self.brokers == 2:
+                    if self.brokers == 1:
                         self.open_stock_exchange()
 
                 # Get stock report
@@ -78,7 +78,7 @@ class StockExchange(Agent):
 
         def broadcast_message(self, message):
 
-            brokers = [1, 3]
+            brokers = [1]
             for broker in brokers:
                 address = "broker%i@127.0.0.1" % broker
                 agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
@@ -106,7 +106,7 @@ class StockExchange(Agent):
 
         def generate_stock(self):
             result = []
-            number_of_stocks = random.randint(10, 20)
+            number_of_stocks = random.randint(3, 5)
             for i in range(0, number_of_stocks):
                 result.append(
                     {

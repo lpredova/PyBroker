@@ -23,7 +23,6 @@ class BrokerAgent(Agent):
 
         def initialize(self):
             self.ip = self.getName().split(" ")[0]
-            self.name = self.getName().split(" ")[1]
             self.budget = random.randint(10000, 50000)
             self.behaviour = random.choice(['risky', 'passive', 'cautious'])
 
@@ -56,13 +55,10 @@ class BrokerAgent(Agent):
             if self.msg:
                 request = json.loads(self.msg.content)
 
-                print request
                 if request['request_type'] == 'stock_open':
-                    print "PRIMIO SAM DA JR BURZA otvorena"
                     self.ask_for_report()
 
                 if request['request_type'] == 'stock_report_data':
-                    print "STOK REPORT DATA"
                     self.evaluate_stock_state(request['data'])
 
         def evaluate_stock_state(self, stock_data):
@@ -118,7 +114,7 @@ def start_broker(broker_id):
 
 if __name__ == '__main__':
 
-    brokers = [1, 3]
+    brokers = [1]
     for broker in brokers:
         try:
             threading.Thread(target=start_broker(broker), args=None).start()
