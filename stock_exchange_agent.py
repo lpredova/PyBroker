@@ -135,8 +135,9 @@ class StockExchange(Agent):
                 else:
                     pass
 
-        def broadcast_message(self, message):
+            self.stock_speculate()
 
+        def broadcast_message(self, message):
             brokers = [1]
             for broker in brokers:
                 address = "broker%i@127.0.0.1" % broker
@@ -151,8 +152,6 @@ class StockExchange(Agent):
                 print '\nMessage %s sent to %s' % (message, address)
 
         def send_message(self, message, address):
-            print address
-
             agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
             self.msg = ACLMessage()
             self.msg.setPerformative("inform")
