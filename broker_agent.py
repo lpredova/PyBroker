@@ -16,6 +16,8 @@ class BrokerAgent(Agent):
 
         ip = None
         name = None
+        behaviour = None
+
         msg = None
         budget = None
 
@@ -23,8 +25,9 @@ class BrokerAgent(Agent):
             self.ip = self.getName().split(" ")[0]
             self.name = self.getName().split(" ")[1]
             self.budget = random.randint(10000, 50000)
+            self.behaviour = random.choice(['risky', 'passive', 'cautious'])
 
-            print 'Agent %s\n Budget: %d' % (self.ip, self.budget)
+            print 'Agent %s\nBudget: %d' % (self.ip, self.budget)
 
         def sign_in(self):
             msg_sign_in_to_stock_exchange = json.dumps(
@@ -43,7 +46,6 @@ class BrokerAgent(Agent):
                  'origin': self.ip
                  }
             )
-
             self.send_message_to_stock(msg_stock_exchange_report)
 
         def _process(self):
@@ -53,17 +55,19 @@ class BrokerAgent(Agent):
             self.msg = self._receive(True)
             if self.msg:
                 request = json.loads(self.msg.content)
-                if request['request_type'] == 'stock_opened':
-                # start monitoring stock, ask for state
-                self.ask_for_report()
 
+                print request
+                if request['request_type'] == 'stock_open':
+                    print "PRIMIO SAM DA JR BURZA otvorena"
+                    self.ask_for_report()
 
-                if request['request_type'] == 'stock_report':
-                    print "msg"
+                if request['request_type'] == 'stock_report_data':
+                    print "STOK REPORT DATA"
+                    self.evaluate_stock_state(request['data'])
 
-        def stop_agent(self):
-            self.kill()
-            sys.exit()
+        def evaluate_stock_state(self, stock_data):
+            print "evaluation stock exchange state"
+            print stock_data
 
         def send_message_to_agent(self, content):
 
@@ -114,7 +118,7 @@ def start_broker(broker_id):
 
 if __name__ == '__main__':
 
-    brokers = [1, 2, 3, 4, 5, 6]
+    brokers = [1, 3]
     for broker in brokers:
         try:
             threading.Thread(target=start_broker(broker), args=None).start()

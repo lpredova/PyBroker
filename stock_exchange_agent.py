@@ -1,8 +1,9 @@
 # coding=utf-8
 # !/usr/bin/env python
 import json
-import sys
 import random
+import string
+import sys
 
 import spade
 from spade.ACLMessage import ACLMessage
@@ -14,102 +15,111 @@ class StockExchange(Agent):
     class OpenStockExchange(Behaviour):
 
         ip = None
-        name = None
         msg = None
         brokers = 0
 
-        stock = None
+        stock = []
 
         def initialize(self):
             self.ip = self.getName().split(" ")[0]
-            self.name = self.getName().split(" ")[1]
+            self.stock = self.generate_stock()
 
-            # generate stocks
-            print "initialize"
+        def open_stock_exchange(self):
+            msg_sign_in_to_stock_exchange = json.dumps(
+                {'request_type': 'stock_open',
+                 'data': None,
+                 'origin': self.ip
+                 }
+            )
+
+            self.broadcast_message(msg_sign_in_to_stock_exchange)
+
+        def send_stock_exchange_report(self, origin_ip):
+            msg_sign_in_to_stock_exchange = json.dumps(
+                {'request_type': 'stock_report_data',
+                 'data': json.dumps(self.stock),
+                 'origin': self.ip
+                 }
+            )
+
+            self.send_message(msg_sign_in_to_stock_exchange, origin_ip)
 
         def _process(self):
-            try:
-                self.msg = self._receive(True)
+            self.initialize()
+            self.msg = self._receive(True)
 
-                if self.msg:
-                    request = json.loads(self.msg.content)
+            if self.msg:
+                request = json.loads(self.msg.content)
 
-                    # Registering brokers to start stock exchange
-                    if request['request_type'] == 'stock_sign_in':
-                        self.brokers += 1
+                print request
+                # Registering brokers to start stock exchange
+                if request['request_type'] == 'stock_sign_in':
+                    self.brokers += 1
 
-                        # All brokers are registrated
-                        if self.brokers == 6:
-                            msg_sign_in_to_stock_exchange = json.dumps(
-                                {'request_type': 'stock_open',
-                                 'data': None,
-                                 'origin': self.ip
-                                 }
-                            )
+                    # All brokers are registrated
+                    if self.brokers == 2:
+                        self.open_stock_exchange()
 
-                            self.broadcast_message(msg_sign_in_to_stock_exchange)
+                # Get stock report
+                if request['request_type'] == 'stock_report':
+                    self.send_stock_exchange_report(request['origin'])
 
-                    # Get stock report
-                    if request['request_type'] == 'stock_report':
+                if request['request_type'] == 'request_two':
+                    print "msg"
 
-                        print "msg"
+                if request['request_type'] == 'request_three':
+                    print "msg"
 
-                    if request['request_type'] == 'request_two':
-                        print "msg"
+                if request['request_type'] == 'request_four':
+                    print "msg"
 
-                    if request['request_type'] == 'request_three':
-                        print "msg"
+                else:
+                    pass
 
-                    if request['request_type'] == 'request_four':
-                        print "msg"
+        def broadcast_message(self, message):
 
-                    else:
-                        pass
-
-            except (KeyboardInterrupt, SystemExit):
-                self.stop_agent()
-
-        def stop_agent(self):
-            self.kill()
-            sys.exit()
-
-        def broadcast_message(self, content):
-
-            brokers = [1, 2, 3, 4, 5, 6]
+            brokers = [1, 3]
             for broker in brokers:
                 address = "broker%i@127.0.0.1" % broker
                 agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
-
                 self.msg = ACLMessage()
                 self.msg.setPerformative("inform")
                 self.msg.setOntology("stock")
                 self.msg.setLanguage("eng")
                 self.msg.addReceiver(agent)
-                self.msg.setContent(content)
+                self.msg.setContent(message)
                 self.myAgent.send(self.msg)
-                print '\nMessage %s sent to %s' % (content, address)
+                print '\nMessage %s sent to %s' % (message, address)
 
-        def send_message(self, message):
-            client = "broker@127.0.0.1"
-            address = "xmpp://" + client
-            receiver = spade.AID.aid(name=client, addresses=[address])
+        def send_message(self, message, address):
+            print address
 
+            agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
             self.msg = ACLMessage()
             self.msg.setPerformative("inform")
             self.msg.setOntology("stock")
             self.msg.setLanguage("eng")
-            self.msg.addReceiver(receiver)
+            self.msg.addReceiver(agent)
             self.msg.setContent(message)
-
             self.myAgent.send(self.msg)
-            # print "\nMessage sent to: %s !" % client
-
+            print '\nMessage %s sent to %s' % (message, address)
 
         def generate_stock(self):
-
+            result = []
             number_of_stocks = random.randint(10, 20)
-            
+            for i in range(0, number_of_stocks):
+                result.append(
+                    {
+                        'name': ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(3)),
+                        'price': random.randint(10, 1000),
+                        'numberOfStocks': 10000,
+                        'tendency': random.choice(
+                            [None, 'up', 'down', 'stale', 'up fast', 'up slow', 'down fast', 'down fast']),
+                        'owners': []
+                    }
+                )
 
+            return result
 
     def _setup(self):
         print "\nVAS Stock exchange\t%s\tis up" % self.getAID().getAddresses()
