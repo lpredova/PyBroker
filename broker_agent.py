@@ -14,28 +14,58 @@ from spade.Behaviour import ACLTemplate, MessageTemplate, Behaviour
 class BrokerAgent(Agent):
     class Speculate(Behaviour):
 
+        ip = None
+        name = None
         msg = None
-        budget = random.randint(10000, 50000)
+        budget = None
+
+        def initialize(self):
+            self.ip = self.getName().split(" ")[0]
+            self.name = self.getName().split(" ")[1]
+            self.budget = random.randint(10000, 50000)
+
+            print 'Agent %s\n Budget: %d' % (self.ip, self.budget)
+
+        def sign_in(self):
+            msg_sign_in_to_stock_exchange = json.dumps(
+                {'request_type': 'stock_sign_in',
+                 'data': None,
+                 'origin': self.ip
+                 }
+            )
+
+            self.send_message_to_stock(msg_sign_in_to_stock_exchange)
+
+        def ask_for_report(self):
+            msg_stock_exchange_report = json.dumps(
+                {'request_type': 'stock_report',
+                 'data': None,
+                 'origin': self.ip
+                 }
+            )
+
+            self.send_message_to_stock(msg_stock_exchange_report)
 
         def _process(self):
-            print "BROKER"
+            self.initialize()
+            self.sign_in()
+
             self.msg = self._receive(True)
             if self.msg:
                 request = json.loads(self.msg.content)
-                if request['request_type'] == 'offer_response':
-                    print "msg"
+                if request['request_type'] == 'stock_opened':
+                # start monitoring stock, ask for state
+                self.ask_for_report()
 
-                if request['request_type'] == 'discount_response':
-                    print "msg"
 
-                if request['request_type'] == 'booking_confirmed':
+                if request['request_type'] == 'stock_report':
                     print "msg"
 
         def stop_agent(self):
             self.kill()
             sys.exit()
 
-        def broadcast_message(self, content):
+        def send_message_to_agent(self, content):
 
             # for agency_id in agencies_ids:
             address = "broker%i@127.0.0.1" % 1
@@ -50,9 +80,9 @@ class BrokerAgent(Agent):
             self.myAgent.send(self.msg)
             # print '\nMessage %s sent to %s' % (content, address)
 
-        def send_message_to_broker(self, content, address):
-
-            agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
+        def send_message_to_stock(self, content):
+            stock_address = 'stock@127.0.0.1'
+            agent = spade.AID.aid(name=stock_address, addresses=["xmpp://%s" % stock_address])
             self.msg = ACLMessage()
             self.msg.setPerformative("inform")
             self.msg.setOntology("stock")
@@ -60,11 +90,8 @@ class BrokerAgent(Agent):
             self.msg.addReceiver(agent)
             self.msg.setContent(content)
             self.myAgent.send(self.msg)
-            # print '\nMessage %s sent to %s' % (content, address)
 
     def _setup(self):
-        print "\n Agent\t" + self.getAID().getName() + " is up"
-
         stock_template = ACLTemplate()
         stock_template.setOntology('stock')
 

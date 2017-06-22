@@ -2,6 +2,7 @@
 # !/usr/bin/env python
 import json
 import sys
+import random
 
 import spade
 from spade.ACLMessage import ACLMessage
@@ -11,17 +12,46 @@ from spade.Behaviour import Behaviour, ACLTemplate
 
 class StockExchange(Agent):
     class OpenStockExchange(Behaviour):
+
+        ip = None
+        name = None
         msg = None
+        brokers = 0
+
+        stock = None
+
+        def initialize(self):
+            self.ip = self.getName().split(" ")[0]
+            self.name = self.getName().split(" ")[1]
+
+            # generate stocks
+            print "initialize"
 
         def _process(self):
             try:
-                print "HELLO STOCK"
                 self.msg = self._receive(True)
 
                 if self.msg:
                     request = json.loads(self.msg.content)
 
-                    if request['request_type'] == 'request_one':
+                    # Registering brokers to start stock exchange
+                    if request['request_type'] == 'stock_sign_in':
+                        self.brokers += 1
+
+                        # All brokers are registrated
+                        if self.brokers == 6:
+                            msg_sign_in_to_stock_exchange = json.dumps(
+                                {'request_type': 'stock_open',
+                                 'data': None,
+                                 'origin': self.ip
+                                 }
+                            )
+
+                            self.broadcast_message(msg_sign_in_to_stock_exchange)
+
+                    # Get stock report
+                    if request['request_type'] == 'stock_report':
+
                         print "msg"
 
                     if request['request_type'] == 'request_two':
@@ -34,7 +64,6 @@ class StockExchange(Agent):
                         print "msg"
 
                     else:
-                        print "bump"
                         pass
 
             except (KeyboardInterrupt, SystemExit):
@@ -46,18 +75,19 @@ class StockExchange(Agent):
 
         def broadcast_message(self, content):
 
-            # for agency_id in agencies_ids:
-            address = "broker%i@127.0.0.1" % 1
-            agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
+            brokers = [1, 2, 3, 4, 5, 6]
+            for broker in brokers:
+                address = "broker%i@127.0.0.1" % broker
+                agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
 
-            self.msg = ACLMessage()
-            self.msg.setPerformative("inform")
-            self.msg.setOntology("stock")
-            self.msg.setLanguage("eng")
-            self.msg.addReceiver(agent)
-            self.msg.setContent(content)
-            self.myAgent.send(self.msg)
-            # print '\nMessage %s sent to %s' % (content, address)
+                self.msg = ACLMessage()
+                self.msg.setPerformative("inform")
+                self.msg.setOntology("stock")
+                self.msg.setLanguage("eng")
+                self.msg.addReceiver(agent)
+                self.msg.setContent(content)
+                self.myAgent.send(self.msg)
+                print '\nMessage %s sent to %s' % (content, address)
 
         def send_message(self, message):
             client = "broker@127.0.0.1"
@@ -66,7 +96,7 @@ class StockExchange(Agent):
 
             self.msg = ACLMessage()
             self.msg.setPerformative("inform")
-            self.msg.setOntology("travel")
+            self.msg.setOntology("stock")
             self.msg.setLanguage("eng")
             self.msg.addReceiver(receiver)
             self.msg.setContent(message)
@@ -74,8 +104,15 @@ class StockExchange(Agent):
             self.myAgent.send(self.msg)
             # print "\nMessage sent to: %s !" % client
 
+
+        def generate_stock(self):
+
+            number_of_stocks = random.randint(10, 20)
+            
+
+
     def _setup(self):
-        print "\nTravel agency\t%s\tis up" % self.getAID().getAddresses()
+        print "\nVAS Stock exchange\t%s\tis up" % self.getAID().getAddresses()
 
         template = ACLTemplate()
         template.setOntology('stock')
