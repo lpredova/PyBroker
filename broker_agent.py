@@ -14,6 +14,7 @@ from spade.Behaviour import ACLTemplate, MessageTemplate, Behaviour
 class BrokerAgent(Agent):
     class Speculate(Behaviour):
 
+        win_threshold = 100000
         ip = None
         name = None
         behaviour = None
@@ -28,7 +29,7 @@ class BrokerAgent(Agent):
             self.budget = random.randint(10000, 50000)
             self.behaviour = random.choice(['risky', 'passive', 'cautious'])
 
-            print 'Agent %s\nBudget: %d' % (self.ip, self.budget)
+            print 'Agent %s\nBudget: %d$' % (self.ip, self.budget)
 
         def sign_in(self):
             msg_sign_in_to_stock_exchange = json.dumps(
@@ -78,9 +79,42 @@ class BrokerAgent(Agent):
                     self.kill()
 
         def evaluate_stock_state(self, stock_data):
-            print "evaluation stock exchange state"
-            print stock_data
-            self.delcate_win()
+            if self.budget >= self.win_threshold:
+                self.delcate_win()
+
+            else:
+                for stock in stock_data:
+
+                    if not self.check_if_i_own_stock(stock):
+                        # buy or wait or sell
+                        if self.behaviour == 'risky':
+                            print "spend max 40% of my money on stock and take into account various stocks"
+
+                        if self.behaviour == 'passive':
+                            print "spend max 10% of my money on stock but rather pass buy all kinds of stocks"
+
+                        if self.behaviour == 'cautious':
+                            print "spend max 10% of my money on stock and buy only growing or stabile"
+
+
+
+                # check if I own this stock, if not then consider buying
+
+
+                self.delcate_win()
+
+        def buy_stock(self):
+            print "buying stock"
+
+        def sell_stock(self):
+            print "sell stock, if not direct offer from another agent then selling price will be loer"
+
+        def check_if_i_own_stock(self, stock):
+            for myStock in self.myStocks:
+                if myStock['id'] == stock['id']:
+                    return True
+
+            return False
 
         def send_message_to_agent(self, content):
 

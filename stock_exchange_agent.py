@@ -18,11 +18,11 @@ class StockExchange(Agent):
         msg = None
         brokers = 0
 
-        stock = []
+        stocks = []
 
         def initialize(self):
             self.ip = self.getName().split(" ")[0]
-            self.stock = self.stock_generate()
+            self.stocks = self.stock_generate()
 
         def open_stock_exchange(self):
             msg_sign_in_to_stock_exchange = json.dumps(
@@ -123,7 +123,7 @@ class StockExchange(Agent):
                         'numberOfStocks': 10000,
                         'totalValue': 10000 * price,
                         'tendency': random.choice(
-                            [None, 'up', 'down', 'stale', 'up fast', 'up slow', 'down fast', 'down fast']),
+                            [None, 'up', 'down', 'stale', 'up fast', 'up slow', 'down fast', 'down slow']),
                         'owners': []
                     }
                 )
@@ -134,10 +134,41 @@ class StockExchange(Agent):
         def stock_trade(self):
             print "Method that allows trading certain amounts of stocks -> returns amount of money spent or earned"
 
-
         # Method that changes prices of generated stocks according with tendency
         def stock_speculate(self):
-            print "Metohd that changes prices of generated stocks"
+            # speculate general price of stock
+            # speculate shares of owners
+            # inform owners
+            for stock in self.stocks:
+                if stock['tendency'] == 'up':
+                    # % of change
+                    price = random.randint(1, 5)
+
+                if stock['tendency'] == 'down':
+                    # % of change
+                    price = random.randint(1, 5)
+
+                if stock['tendency'] == 'stale':
+                    # % of change
+                    price = random.randint(0, 1)
+
+                if stock['tendency'] == 'up slow':
+                    # % of change
+                    price = random.randint(5, 10)
+
+                if stock['tendency'] == 'up fast':
+                    # % of change
+                    price = random.randint(10, 50)
+
+                if stock['tendency'] == 'down slow':
+                    # % of change
+                    price = random.randint(10, 50)
+
+                if stock['tendency'] == 'down fast':
+                    # % of change
+                    price = random.randint(10, 50)
+
+
 
     def _setup(self):
         print "\nVAS Stock exchange\t%s\tis up" % self.getAID().getAddresses()
