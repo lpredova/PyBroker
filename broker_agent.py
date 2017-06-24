@@ -75,6 +75,7 @@ class BrokerAgent(Agent):
             self.send_message_to_stock(msg_stock_to_sell)
 
         def declare_win(self):
+            print "Agent %s WON!" % self.name
             msg_stock_win = json.dumps(
                 {
                     'request_type': 'stock_win',
@@ -117,12 +118,15 @@ class BrokerAgent(Agent):
                 self.declare_win()
 
             else:
+                stock_data = json.loads(stock_data)
+
                 for stock in stock_data:
                     # buy or wait or sell
                     take_action_odds = random.randint(0, 100)
                     action = random.choice(['buy', 'sell', 'stale'])
 
-                    print take_action_odds,action, stock
+                    print take_action_odds,action
+                    print stock
 
                     if self.behaviour == 'risky':
                         # takes action in 80 % of cases
