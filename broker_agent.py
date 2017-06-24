@@ -203,21 +203,6 @@ class BrokerAgent(Agent):
             self.myStocks = clean
             self.budget += data['price']
 
-        def send_message_to_agent(self, content):
-
-            # for agency_id in agencies_ids:
-            address = "broker%i@127.0.0.1" % 1
-            agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
-
-            self.msg = ACLMessage()
-            self.msg.setPerformative("inform")
-            self.msg.setOntology("stock")
-            self.msg.setLanguage("eng")
-            self.msg.addReceiver(agent)
-            self.msg.setContent(content)
-            self.myAgent.send(self.msg)
-            # print '\nMessage %s sent to %s' % (content, address)
-
         def send_message_to_stock(self, content):
             stock_address = 'stock@127.0.0.1'
             agent = spade.AID.aid(name=stock_address, addresses=["xmpp://%s" % stock_address])
@@ -228,6 +213,8 @@ class BrokerAgent(Agent):
             self.msg.addReceiver(agent)
             self.msg.setContent(content)
             self.myAgent.send(self.msg)
+
+            print '\nMessage %s sent to %s' % (content, stock_address)
 
     def _setup(self):
         stock_template = ACLTemplate()
@@ -256,7 +243,7 @@ if __name__ == '__main__':
     for broker in brokers:
         try:
             threading.Thread(target=start_broker, args=[broker]).start()
-            time.sleep(0.5)
+            time.sleep(1)
         except (KeyboardInterrupt, SystemExit):
             sys.exit()
         except Exception, e:

@@ -111,9 +111,11 @@ class StockExchange(Agent):
                 # Registering brokers to start stock exchange
                 if request['request_type'] == 'stock_sign_in':
                     self.brokers += 1
+                    print "Broker %s signed in" % request['origin']
 
                     # All brokers are registrated
-                    if self.brokers == 1:
+                    if self.brokers == 2:
+                        print "Opening stock exchange..."
                         self.open_stock_exchange()
 
                 # Get stock report
@@ -135,7 +137,7 @@ class StockExchange(Agent):
                 else:
                     pass
 
-            self.stock_speculate()
+            #self.stock_speculate()
 
         def broadcast_message(self, message):
             brokers = [1]
