@@ -17,6 +17,7 @@ class StockExchange(Agent):
         ip = None
         msg = None
         brokers = 0
+        brokers_total = 2
 
         stocks = []
 
@@ -107,11 +108,10 @@ class StockExchange(Agent):
             if self.msg:
                 request = json.loads(self.msg.content)
 
-                print request
                 # Registering brokers to start stock exchange
                 if request['request_type'] == 'stock_sign_in':
                     self.brokers += 1
-                    print "Broker %s signed in" % request['origin']
+                    print "Broker %s signed in %d/%d" % (request['origin'], self.brokers, self.brokers_total)
 
                     # All brokers are registrated
                     if self.brokers == 2:
@@ -137,7 +137,7 @@ class StockExchange(Agent):
                 else:
                     pass
 
-            #self.stock_speculate()
+                    # self.stock_speculate()
 
         def broadcast_message(self, message):
             brokers = [1]
@@ -151,7 +151,7 @@ class StockExchange(Agent):
                 self.msg.addReceiver(agent)
                 self.msg.setContent(message)
                 self.myAgent.send(self.msg)
-                print '\nMessage %s sent to %s' % (message, address)
+                # print '\nMessage %s sent to %s' % (message, address)
 
         def send_message(self, message, address):
             agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
@@ -162,7 +162,7 @@ class StockExchange(Agent):
             self.msg.addReceiver(agent)
             self.msg.setContent(message)
             self.myAgent.send(self.msg)
-            print '\nMessage %s sent to %s' % (message, address)
+            # print '\nMessage %s sent to %s' % (message, address)
 
         # Initialize stocks
         def stock_generate(self):

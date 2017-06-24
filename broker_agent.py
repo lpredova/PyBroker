@@ -1,7 +1,6 @@
 # coding=utf-8
 # !/usr/bin/env python
 import json
-import sys
 import threading
 import time
 
@@ -26,10 +25,11 @@ class BrokerAgent(Agent):
 
         def initialize(self):
             self.ip = self.getName().split(" ")[0]
+            self.name = self.getName().split(" ")[0].split("@")[0]
             self.budget = random.randint(10000, 50000)
             self.behaviour = random.choice(['risky', 'passive', 'cautious'])
 
-            print 'Agent %s\nBudget: %d$' % (self.ip, self.budget)
+            print 'Agent %s\nBudget: %d$\nBehaviour: %s' % (self.ip, self.budget, self.behaviour)
 
         def sign_in(self):
             msg_sign_in_to_stock_exchange = json.dumps(
@@ -39,7 +39,7 @@ class BrokerAgent(Agent):
                     'origin': self.ip
                 }
             )
-
+            stared_brokers.append(self.name)
             self.send_message_to_stock(msg_sign_in_to_stock_exchange)
 
         def ask_for_report(self):
@@ -86,8 +86,9 @@ class BrokerAgent(Agent):
             self.send_message_to_stock(msg_stock_win)
 
         def _process(self):
-            self.initialize()
-            self.sign_in()
+            if not (self.name in stared_brokers):
+                self.initialize()
+                self.sign_in()
 
             self.msg = self._receive(True)
             if self.msg:
@@ -212,9 +213,10 @@ class BrokerAgent(Agent):
             self.msg.setLanguage("eng")
             self.msg.addReceiver(agent)
             self.msg.setContent(content)
+
             self.myAgent.send(self.msg)
 
-            print '\nMessage %s sent to %s' % (content, stock_address)
+            # print '\nMessage %s sent to %s' % (content, stock_address)
 
     def _setup(self):
         stock_template = ACLTemplate()
@@ -225,27 +227,17 @@ class BrokerAgent(Agent):
         self.addBehaviour(settings, mt)
 
 
-def start_broker(broker_id):
-    try:
-        ip = "broker%i@127.0.0.1" % broker_id
-        agency_name = "broker%i" % broker_id
+brokers = ['broker1', 'broker2']
+stared_brokers = []
 
-        agent = BrokerAgent(ip, agency_name)
-        agent.start()
 
-    except Exception, e:
-        print e
+def start_broker(broker_name):
+    ip = '%s@127.0.0.1' % broker_name
+    agent = BrokerAgent(ip, broker_name)
+    agent.start()
 
 
 if __name__ == '__main__':
-
-    brokers = [1, 2]
     for broker in brokers:
-        try:
-            threading.Thread(target=start_broker, args=[broker]).start()
-            time.sleep(1)
-        except (KeyboardInterrupt, SystemExit):
-            sys.exit()
-        except Exception, e:
-            print "\nError while starting broker!"
-            print e.message
+        threading.Thread(target=start_broker, args=[broker]).start()
+        time.sleep(1.5)
