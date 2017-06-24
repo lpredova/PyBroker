@@ -252,11 +252,11 @@ def start_broker(broker_id):
 
 if __name__ == '__main__':
 
-    brokers = [1]
+    brokers = [1, 2]
     for broker in brokers:
         try:
-            threading.Thread(target=start_broker(broker), args=None).start()
-            time.sleep(1)
+            threading.Thread(target=start_broker, args=[broker]).start()
+            time.sleep(0.5)
         except (KeyboardInterrupt, SystemExit):
             sys.exit()
         except Exception, e:
