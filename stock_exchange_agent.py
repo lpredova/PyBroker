@@ -17,13 +17,14 @@ class StockExchange(Agent):
         ip = None
         msg = None
         brokers = 0
-        brokers_total = 2
+        brokers_total = 0
 
         stocks = []
 
         def initialize(self):
             self.ip = self.getName().split(" ")[0]
             self.stocks = self.stock_generate()
+            self.brokers_total = len(brokers)
 
         # Sends signal that stock exchange is opened for business
         def open_stock_exchange(self):
@@ -140,9 +141,8 @@ class StockExchange(Agent):
                     # self.stock_speculate()
 
         def broadcast_message(self, message):
-            brokers = [1]
             for broker in brokers:
-                address = "broker%i@127.0.0.1" % broker
+                address = "%s@127.0.0.1" % broker
                 agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
                 self.msg = ACLMessage()
                 self.msg.setPerformative("inform")
@@ -151,7 +151,7 @@ class StockExchange(Agent):
                 self.msg.addReceiver(agent)
                 self.msg.setContent(message)
                 self.myAgent.send(self.msg)
-                # print '\nMessage %s sent to %s' % (message, address)
+                print '\nMessage %s sent to %s' % (message, address)
 
         def send_message(self, message, address):
             agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
@@ -253,7 +253,7 @@ class StockExchange(Agent):
                     self.increase_owner_shares(stock, delta)
 
         def increase_owner_shares(self, stock, delta):
-            if len(stock > 0):
+            if len(stock) > 0:
                 for owner in stock['owners']:
                     owner['price'] = owner['price'] + delta
                     owner['totalPrice'] = owner['totalPrice'] * owner['numberOfShares']
@@ -296,6 +296,8 @@ class StockExchange(Agent):
         behaviour = spade.Behaviour.MessageTemplate(template)
         self.addBehaviour(self.OpenStockExchange(), behaviour)
 
+
+brokers = ['broker1', 'broker2']
 
 if __name__ == "__main__":
     try:

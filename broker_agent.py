@@ -111,6 +111,8 @@ class BrokerAgent(Agent):
                     self.kill()
 
         def evaluate_stock_state(self, stock_data):
+            print 'Agent %s evaluating stock data...' % self.name
+
             if self.budget >= self.win_threshold:
                 self.declare_win()
 
@@ -119,6 +121,8 @@ class BrokerAgent(Agent):
                     # buy or wait or sell
                     take_action_odds = random.randint(0, 100)
                     action = random.choice(['buy', 'sell', 'stale'])
+
+                    print take_action_odds,action, stock
 
                     if self.behaviour == 'risky':
                         # takes action in 80 % of cases
