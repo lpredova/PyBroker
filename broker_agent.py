@@ -16,7 +16,7 @@ import helper
 class BrokerAgent(Agent):
     class Speculate(Behaviour):
 
-        win_threshold = float(60000)
+        win_threshold = float(100000)
         ip = None
         name = None
         behaviour = None
@@ -93,7 +93,7 @@ class BrokerAgent(Agent):
             self.send_message_to_stock(msg_stock_to_sell)
 
         def declare_win(self):
-            print "Agent %s WON!" % self.name
+            helper.print_green("\nAgent %s WON! Total sum: %d$" % (self.name, self.get_bank_account()))
             msg_stock_win = json.dumps(
                 {
                     'uuid': str(uuid.uuid4()),
@@ -137,7 +137,7 @@ class BrokerAgent(Agent):
             print '\nAgent %s evaluating stock data...' % self.name
             took_action = False
 
-            if self.budget >= self.win_threshold:
+            if self.get_bank_account() >= self.win_threshold:
                 self.declare_win()
                 took_action = True
 
@@ -272,6 +272,15 @@ class BrokerAgent(Agent):
 
         def print_money_status(self):
             helper.print_yellow("Agent:%s\tTotal:%d$" % (self.name, self.budget))
+
+        def get_bank_account(self):
+            total_money = float(self.budget)
+
+            if len(self.myStocks):
+                for stock in self.myStocks:
+                    total_money += stock['number'] * stock['pricePerShare']
+
+            return total_money
 
         def adjust_stock_prices(self, data):
             for stock in self.myStocks:

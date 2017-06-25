@@ -153,7 +153,7 @@ class StockExchange(Agent):
                     # All brokers are registrated
                     if self.brokers == self.brokers_total:
                         self.initialize()
-                        print "Opening stock exchange..."
+                        helper.print_green("Opening stock exchange...")
                         self.open_stock_exchange()
 
                 # Collect round status from agents
@@ -182,7 +182,7 @@ class StockExchange(Agent):
 
                 # Declare winner and close the stock exchange
                 if request['request_type'] == 'stock_win':
-                    print "Broker %s got rich. Closing stock exchange..." % request['origin']
+                    helper.print_green("Broker %s got rich. Closing stock exchange..." % request['origin'])
                     self.send_close_stock_exchange()
 
         # Initialize stocks
