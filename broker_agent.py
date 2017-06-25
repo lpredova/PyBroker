@@ -28,7 +28,8 @@ class BrokerAgent(Agent):
             self.ip = self.getName().split(" ")[0]
             self.name = self.getName().split(" ")[0].split("@")[0]
             self.budget = random.randint(10000, 50000)
-            self.behaviour = random.choice(['risky', 'passive', 'cautious'])
+            # self.behaviour = random.choice(['risky', 'passive', 'cautious'])
+            self.behaviour = random.choice(['risky'])
 
             print 'Agent %s\nBudget: %d$\nBehaviour: %s' % (self.ip, self.budget, self.behaviour)
 
@@ -231,16 +232,16 @@ class BrokerAgent(Agent):
             return False
 
         def add_to_my_stocks(self, data):
-            if not self.check_if_double_transaction(data['transactionsId']):
-                self.myStocks.append({
-                    'transaction': data['transactionsId'],
-                    'ip': data['origin'],
-                    'price': data['price'],
-                    'number': data['amount'],
-                })
-                self.budget -= data['price']
-                print "\nAgent %s bought %d stock %s for %d$\nMoney left: %d$" % (
-                    self.name, data['amount'], data['data']['name'], data['price'], self.budget)
+            # if not self.check_if_double_transaction(data['transactionsId']):
+            self.myStocks.append({
+                'transaction': data['transactionsId'],
+                'ip': data['origin'],
+                'price': data['price'],
+                'number': data['amount'],
+            })
+            self.budget -= data['price']
+            print "\nAgent %s bought %d stock %s for %d$\nMoney left: %d$" % (
+                self.name, data['amount'], data['data']['name'], data['price'], self.budget)
 
         def remove_from_my_stocks(self, data):
             clean = []

@@ -277,8 +277,6 @@ class StockExchange(Agent):
                     stock['price'] -= delta
 
                 stock['totalValue'] = stock['numberOfStocks'] * stock['price']
-                print stock, delta
-
                 self.increase_owner_shares(stock, delta)
 
         def increase_owner_shares(self, stock, delta):
