@@ -266,7 +266,7 @@ class StockExchange(Agent):
                 self.increase_owner_shares(stock, delta)
 
             print "Starting new round of trading..."
-            time.sleep(2)
+            time.sleep(0.5)
             self.broadcast_stock_exchange_report()
 
         def increase_owner_shares(self, stock, delta):

@@ -211,12 +211,12 @@ class BrokerAgent(Agent):
             if stock['numberOfStocks'] > 0:
                 budget_percentage = (random.randint(1, max_percentage)) / float(100)
                 money_to_spend = self.budget * budget_percentage
-
                 number_of_stocks = money_to_spend / stock['price']
-                print "\nAgent:%s\tTrying to buy %d of %s for %d$" % (
-                    self.name, number_of_stocks, stock['name'], money_to_spend)
 
-                self.buy_stock(stock, int(number_of_stocks))
+                if int(number_of_stocks) > 0:
+                    print "\nAgent:%s\tTrying to buy %d of %s for %d$" % (
+                        self.name, number_of_stocks, stock['name'], money_to_spend)
+                    self.buy_stock(stock, int(number_of_stocks))
 
         def sell_stock_evaluation(self, stock):
             if stock['numberOfStocks'] > 0:
@@ -270,7 +270,7 @@ class BrokerAgent(Agent):
             self.print_money_status()
 
         def print_money_status(self):
-            print "\nAgent:%s\tTotal:%d$" % (self.name, self.budget)
+            print "Agent:%s\tTotal:%d$" % (self.name, self.budget)
 
         def adjust_stock_prices(self, data):
             for stock in self.myStocks:
