@@ -12,6 +12,8 @@ from spade.ACLMessage import ACLMessage
 from spade.Agent import Agent
 from spade.Behaviour import Behaviour, ACLTemplate
 
+import helper
+
 
 class StockExchange(Agent):
     class OpenStockExchange(Behaviour):
@@ -30,12 +32,13 @@ class StockExchange(Agent):
             self.ip = self.getName().split(" ")[0]
             self.stocks = self.stock_generate()
 
-            print "\n Generated %d stocks...\n" % len(self.stocks)
+            helper.print_yellow("Generated %d stocks...\n" % len(self.stocks))
             for stock in self.stocks:
                 print 'ID: %d' % stock['id']
                 print 'Name: %s' % stock['name']
                 print 'Price per stock: %d' % stock['price']
-            print "\n"
+
+            helper.print_yellow("============================================")
 
         # Sends signal that stock exchange is opened for business
         def open_stock_exchange(self):
@@ -208,8 +211,8 @@ class StockExchange(Agent):
         def buy_stock(self, data):
             price = data['stocksToBuy'] * data['data']['price']
             self.stock_add_owner(data['data'], price, data['stocksToBuy'], data['origin'])
-            print "Agent %s bought %d shares of:%s for %d$" % (
-                data['origin'], data['stocksToBuy'], data['data']['name'], price)
+            helper.print_green("Agent %s bought %d shares of:%s for %d$" % (
+                data['origin'], data['stocksToBuy'], data['data']['name'], price))
 
         def sell_stock(self, data):
             price = data['stocksToSell'] * data['data']['price']
@@ -265,7 +268,7 @@ class StockExchange(Agent):
                 stock['totalValue'] = stock['numberOfStocks'] * stock['price']
                 self.increase_owner_shares(stock, delta)
 
-            print "Starting new round of trading..."
+            helper.print_yellow("Starting new round of trading...")
             time.sleep(0.5)
             self.broadcast_stock_exchange_report()
 
@@ -338,7 +341,7 @@ class StockExchange(Agent):
             # print '\nMessage %s sent to %s' % (message, address)
 
     def _setup(self):
-        print "\nVAS Stock exchange\t%s\tis up" % self.getAID().getAddresses()
+        helper.print_green("\nVAS Stock exchange\t%s\tis up" % self.getAID().getAddresses())
 
         template = ACLTemplate()
         template.setOntology('stock')

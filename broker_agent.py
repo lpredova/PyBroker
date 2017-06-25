@@ -10,11 +10,13 @@ from spade.ACLMessage import ACLMessage
 from spade.Agent import Agent, random
 from spade.Behaviour import ACLTemplate, MessageTemplate, Behaviour
 
+import helper
+
 
 class BrokerAgent(Agent):
     class Speculate(Behaviour):
 
-        win_threshold = float(80000)
+        win_threshold = float(60000)
         ip = None
         name = None
         behaviour = None
@@ -255,8 +257,8 @@ class BrokerAgent(Agent):
                 })
 
                 self.budget -= float(data['price'])
-                print "\nAgent %s bought %d stock of %s for %d$\nMoney left: %d$" % (
-                    self.name, data['amount'], data['name'], data['price'], self.budget)
+                helper.print_red("\nAgent %s bought %d stock of %s for %d$" % (
+                    self.name, data['amount'], data['name'], data['price']))
 
         def remove_from_my_stocks(self, data):
             clean = []
@@ -265,12 +267,12 @@ class BrokerAgent(Agent):
                     clean.append(stock)
 
             self.myStocks = clean
-            print "Agent:%s\t+%d$ to budget" % (self.name, float(data['price']))
+            helper.print_green("Agent:%s\t+%d$ to budget" % (self.name, float(data['price'])))
             self.budget += float(data['price'])
             self.print_money_status()
 
         def print_money_status(self):
-            print "Agent:%s\tTotal:%d$" % (self.name, self.budget)
+            helper.print_yellow("Agent:%s\tTotal:%d$" % (self.name, self.budget))
 
         def adjust_stock_prices(self, data):
             for stock in self.myStocks:
