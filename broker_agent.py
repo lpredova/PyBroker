@@ -119,14 +119,10 @@ class BrokerAgent(Agent):
 
             else:
                 stock_data = json.loads(stock_data)
-
                 for stock in stock_data:
                     # buy or wait or sell
-                    take_action_odds = random.randint(0, 100)
+                    take_action_odds = random.randint(1, 100)
                     action = random.choice(['buy', 'sell', 'stale'])
-
-                    print take_action_odds,action
-                    print stock
 
                     if self.behaviour == 'risky':
                         # takes action in 80 % of cases
@@ -135,10 +131,14 @@ class BrokerAgent(Agent):
                             if action == 'buy' and not self.check_if_i_own_stock(stock):
                                 self.buy_stock_evaluation(40, stock)
 
-                            if action == 'sell' and self.check_if_i_own_stock(stock):
+                            elif action == 'sell' and self.check_if_i_own_stock(stock):
                                 self.sell_stock_evaluation(stock)
 
-                    if self.behaviour == 'cautious':
+                            else:
+                                print '\nAgent %s takes no action' % self.name
+                                pass
+
+                    elif self.behaviour == 'cautious':
                         # takes action in 40 % of cases
                         if take_action_odds < 40:
                             # spend max 10% of my money on stock and buy only growing or stable"
@@ -150,35 +150,41 @@ class BrokerAgent(Agent):
                                          or stock['tendency'] == 'stale'):
                                 self.buy_stock_evaluation(10, stock)
 
-                            if action == 'sell' \
+                            elif action == 'sell' \
                                     and self.check_if_i_own_stock(stock) \
                                     and (stock['tendency'] == 'down'
                                          or stock['tendency'] == 'down fast'
                                          or stock['tendency'] == 'down slow'):
                                 self.sell_stock_evaluation(stock)
 
-                    if self.behaviour == 'passive':
+                            else:
+                                print '\nAgent %s takes no action' % self.name
+                                pass
+
+                    elif self.behaviour == 'passive':
                         # takes action in 20 % of cases
                         if take_action_odds < 20:
                             # spend max 10% of my money on stock but rather pass buy all kinds of stocks"
                             if action == 'buy' and not self.check_if_i_own_stock(stock):
                                 self.buy_stock_evaluation(40, stock)
 
-                            if action == 'sell' and self.check_if_i_own_stock(stock):
+                            elif action == 'sell' and self.check_if_i_own_stock(stock):
                                 self.sell_stock_evaluation(stock)
-
-                self.declare_win()
+                            else:
+                                print '\nAgent %s takes no action' % self.name
+                                pass
 
         def buy_stock_evaluation(self, max_percentage, stock):
 
             if stock['numberOfStocks'] > 0:
-                budget_percentage = random.randint(0, max_percentage) / 100
+                budget_percentage = (random.randint(1, max_percentage)) / float(100)
                 money_to_spend = self.budget * budget_percentage
 
-                number_of_stocks = money_to_spend % stock['price']
-                self.buy_stock(stock, number_of_stocks)
+                number_of_stocks = money_to_spend / stock['price']
+                self.buy_stock(stock, int(number_of_stocks))
 
         def sell_stock_evaluation(self, stock):
+            print 'sell stock ' + stock
 
             if stock['numberOfStocks'] > 0:
                 for s in self.myStocks:
