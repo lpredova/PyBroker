@@ -126,8 +126,7 @@ class BrokerAgent(Agent):
                     self.remove_from_my_stocks(request)
 
                 if request['request_type'] == 'stock_share_change':
-                    print "STOCK CHANGE VALUE"
-                    # self.remove_from_my_stocks(request)
+                    self.adjust_stock_prices(request)
 
                 if request['request_type'] == 'stock_close':
                     print 'Agent %s stopped trading, Won %d$' % (self.ip, self.budget)
@@ -231,6 +230,8 @@ class BrokerAgent(Agent):
                 self.buy_stock(stock, int(number_of_stocks))
 
         def sell_stock_evaluation(self, stock):
+            print "SELL"
+
             if stock['numberOfStocks'] > 0:
                 for s in self.myStocks:
                     if s['id'] == stock['id']:
@@ -262,6 +263,7 @@ class BrokerAgent(Agent):
                     'transaction': data['transactionsId'],
                     'ip': data['origin'],
                     'price': data['price'],
+                    'pricePerShare': data['price'] / float(data['amount']),
                     'number': data['amount'],
                 })
 
@@ -279,8 +281,11 @@ class BrokerAgent(Agent):
             self.myStocks = clean
             self.budget += float(data['price'])
 
-        def adjust_stock_prices(self,data):
-            pass
+        def adjust_stock_prices(self, data):
+            for stock in self.myStocks:
+                if stock['id'] == data['id']:
+                    stock['pricePerShare'] = data['price']
+                    stock['price'] = stock['number'] * stock['pricePerShare']
 
         def send_message_to_stock(self, content):
             stock_address = 'stock@127.0.0.1'

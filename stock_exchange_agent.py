@@ -31,6 +31,11 @@ class StockExchange(Agent):
             self.stocks = self.stock_generate()
 
             print "\n Generated %d stocks...\n" % len(self.stocks)
+            for stock in self.stocks:
+                print stock['id']
+                print stock['name']
+                print stock['price']
+            print "\n"
 
         # Sends signal that stock exchange is opened for business
         def open_stock_exchange(self):
@@ -76,6 +81,8 @@ class StockExchange(Agent):
             msg_owner_share_change = json.dumps(
                 {
                     'uuid': str(uuid.uuid4()),
+                    'id': stock['id'],
+                    'price': stock['price'],
                     'request_type': 'stock_share_change',
                     'data': json.dumps(stock),
                     'origin': self.ip
