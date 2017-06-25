@@ -62,17 +62,19 @@ class StockExchange(Agent):
 
             self.send_message(msg_owner_share_change, origin_ip)
 
-        def send_buy_confirmation(self, stock, origin_ip, price, amount):
+        def send_buy_confirmation(self, stock, origin_ip, price, amount, transaction):
             msg_owner_buy_confirm = json.dumps(
                 {
                     'request_type': 'stock_bought',
                     'data': json.dumps(stock),
                     'origin': self.ip,
                     'price': price,
-                    'amount': amount
+                    'amount': amount,
+                    'transactionsId': transaction
                 }
             )
 
+            print msg_owner_buy_confirm
             self.send_message(msg_owner_buy_confirm, origin_ip)
 
         def send_sell_confirmation(self, stock, origin_ip, price, amount):
@@ -162,7 +164,7 @@ class StockExchange(Agent):
             self.msg.addReceiver(agent)
             self.msg.setContent(message)
             self.myAgent.send(self.msg)
-            # print '\nMessage %s sent to %s' % (message, address)
+            print '\nMessage %s sent to %s' % (message, address)
 
         # Initialize stocks
         def stock_generate(self):
@@ -178,7 +180,7 @@ class StockExchange(Agent):
                         'numberOfStocks': 10000,
                         'totalValue': 10000 * price,
                         'tendency': random.choice(
-                            [None, 'up', 'down', 'stale', 'up fast', 'up slow', 'down fast', 'down slow']),
+                            ['up', 'down', 'stale', 'up fast', 'up slow', 'down fast', 'down slow']),
                         'owners': []
                     }
                 )
@@ -188,17 +190,15 @@ class StockExchange(Agent):
         # Method that allows trading certain amounts of stocks
         def buy_stock(self, data):
             price = data['stocksToBuy'] * data['data']['price']
-            self.stock_add_owner(data['data'], price, data['stocksToBuy'], data['origin'])
-            print "%s bought %d shares %s for %d" % (data['origin'], data['stocksToBuy'], data['data']['name'], price)
-            # send info to broker
-            self.send_buy_confirmation(data['data'], data['origin'], price, data['stocksToBuy'])
+            transactions_id = self.stock_add_owner(data['data'], price, data['stocksToBuy'], data['origin'])
+            print transactions_id
+            print "Agent %s bought %d shares of:%s for %d$" % (
+                data['origin'], data['stocksToBuy'], data['data']['name'], price)
 
         def sell_stock(self, data):
             price = data['stocksToSell'] * data['data']['price']
             self.stock_remove_owner(data['data'], price, data['origin'])
             print "%s sold %d shares %s for %d" % (data['origin'], data['stocksToSell'], data['data']['name'], price)
-            # send info to broker
-            self.send_sell_confirmation(data['data'], data['origin'], price, data['stocksToSell'])
 
         # Method that changes prices of generated stocks according with tendency
         def stock_speculate(self):
@@ -263,16 +263,20 @@ class StockExchange(Agent):
         def stock_add_owner(self, stock, total_price, shares, ip):
             for old_stock in self.stocks:
                 if old_stock['id'] == stock['id']:
-                    old_stock['shares'] -= shares
-
+                    old_stock['numberOfStocks'] -= shares
                     owners = old_stock['owners']
+                    transaction = random.randint(1, 100000)
+                    print transaction
                     owners.append({
+                        'transactionId': transaction,
                         'ip': ip,
                         'price': total_price,
                         'shares': shares,
                     })
 
                     old_stock['owners'] = owners
+                    self.send_buy_confirmation(old_stock, ip, total_price, shares, transaction)
+                    return transaction
 
         def stock_remove_owner(self, stock, shares, ip):
             for old_stock in self.stocks:

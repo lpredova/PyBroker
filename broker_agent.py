@@ -112,10 +112,12 @@ class BrokerAgent(Agent):
                     self.kill()
 
         def evaluate_stock_state(self, stock_data):
-            print 'Agent %s evaluating stock data...' % self.name
+            print '\nAgent %s evaluating stock data...' % self.name
+            took_action = False
 
             if self.budget >= self.win_threshold:
                 self.declare_win()
+                took_action = True
 
             else:
                 stock_data = json.loads(stock_data)
@@ -130,13 +132,11 @@ class BrokerAgent(Agent):
                             # spend max 40% of my money on this stock and buy all stocks"
                             if action == 'buy' and not self.check_if_i_own_stock(stock):
                                 self.buy_stock_evaluation(40, stock)
+                                took_action = True
 
                             elif action == 'sell' and self.check_if_i_own_stock(stock):
                                 self.sell_stock_evaluation(stock)
-
-                            else:
-                                print '\nAgent %s takes no action' % self.name
-                                pass
+                                took_action = True
 
                     elif self.behaviour == 'cautious':
                         # takes action in 40 % of cases
@@ -149,6 +149,7 @@ class BrokerAgent(Agent):
                                          or stock['tendency'] == 'up slow'
                                          or stock['tendency'] == 'stale'):
                                 self.buy_stock_evaluation(10, stock)
+                                took_action = True
 
                             elif action == 'sell' \
                                     and self.check_if_i_own_stock(stock) \
@@ -156,10 +157,7 @@ class BrokerAgent(Agent):
                                          or stock['tendency'] == 'down fast'
                                          or stock['tendency'] == 'down slow'):
                                 self.sell_stock_evaluation(stock)
-
-                            else:
-                                print '\nAgent %s takes no action' % self.name
-                                pass
+                                took_action = True
 
                     elif self.behaviour == 'passive':
                         # takes action in 20 % of cases
@@ -167,12 +165,14 @@ class BrokerAgent(Agent):
                             # spend max 10% of my money on stock but rather pass buy all kinds of stocks"
                             if action == 'buy' and not self.check_if_i_own_stock(stock):
                                 self.buy_stock_evaluation(40, stock)
+                                took_action = True
 
                             elif action == 'sell' and self.check_if_i_own_stock(stock):
                                 self.sell_stock_evaluation(stock)
-                            else:
-                                print '\nAgent %s takes no action' % self.name
-                                pass
+                                took_action = True
+
+            if not took_action:
+                print '\nAgent %s takes no action' % self.name
 
         def buy_stock_evaluation(self, max_percentage, stock):
 
@@ -199,14 +199,27 @@ class BrokerAgent(Agent):
 
             return False
 
+        def check_if_double_transaction(self, transaction_id):
+            for myStock in self.myStocks:
+
+                print myStock['transaction'], transaction_id
+                if myStock['transaction'] == transaction_id:
+                    return True
+
+            return False
+
         def add_to_my_stocks(self, data):
-            self.myStocks.append({
-                'ip': data['origin'],
-                'data': data['origin'],
-                'price': data['price'],
-                'number': data['price'],
-            })
-            self.budget -= data['price']
+            print "Transactions id:%d" % data['transactionId']
+            if not self.check_if_double_transaction(data['transactionId']):
+                self.myStocks.append({
+                    'transaction': data['transactionId'],
+                    'ip': data['origin'],
+                    'price': data['price'],
+                    'number': data['amount'],
+                })
+                self.budget -= data['price']
+                print "Agent %s bought %d stock for %d\n Money left: %d" % (
+                    self.name, data['amount'], data['price'], self.budget)
 
         def remove_from_my_stocks(self, data):
             clean = []
@@ -230,7 +243,7 @@ class BrokerAgent(Agent):
 
             self.myAgent.send(self.msg)
 
-            # print '\nMessage %s sent to %s' % (content, stock_address)
+            print '\nMessage %s sent to %s' % (content, stock_address)
 
     def _setup(self):
         stock_template = ACLTemplate()
