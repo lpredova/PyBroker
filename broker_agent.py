@@ -117,6 +117,7 @@ class BrokerAgent(Agent):
                     self.ask_for_report()
 
                 if request['request_type'] == 'stock_report_data':
+                    print "%s primio report" % self.name
                     self.evaluate_stock_state(request['data'])
 
                 if request['request_type'] == 'stock_bought':
@@ -148,17 +149,25 @@ class BrokerAgent(Agent):
                     take_action_odds = random.randint(1, 100)
                     action = random.choice(['buy', 'sell', 'stale'])
 
+                    print action, self.behaviour
                     if self.behaviour == 'risky':
                         # takes action in 80 % of cases
                         if take_action_odds < 80:
                             # spend max 40% of my money on this stock and buy all stocks"
                             if action == 'buy' and not self.check_if_i_own_stock(stock):
+                                print "BUY RISKY"
+
                                 self.buy_stock_evaluation(40, stock)
                                 took_action = True
 
                             elif action == 'sell' and self.check_if_i_own_stock(stock):
+                                print "SELL RISKY"
                                 self.sell_stock_evaluation(stock)
                                 took_action = True
+                            else:
+                                took_action = False
+
+                                print "ELSE BUY"
 
                     elif self.behaviour == 'cautious':
                         # takes action in 40 % of cases
@@ -170,6 +179,8 @@ class BrokerAgent(Agent):
                                          or stock['tendency'] == 'up fast'
                                          or stock['tendency'] == 'up slow'
                                          or stock['tendency'] == 'stale'):
+                                print "BUY CAUTIOUS"
+
                                 self.buy_stock_evaluation(10, stock)
                                 took_action = True
 
@@ -178,20 +189,30 @@ class BrokerAgent(Agent):
                                     and (stock['tendency'] == 'down'
                                          or stock['tendency'] == 'down fast'
                                          or stock['tendency'] == 'down slow'):
+                                print "SELL CAUTIOUS"
+
                                 self.sell_stock_evaluation(stock)
                                 took_action = True
+                            else:
+                                took_action = False
 
                     elif self.behaviour == 'passive':
                         # takes action in 20 % of cases
                         if take_action_odds < 20:
                             # spend max 10% of my money on stock but rather pass buy all kinds of stocks"
                             if action == 'buy' and not self.check_if_i_own_stock(stock):
+                                print "BUY PASSIVE"
+
                                 self.buy_stock_evaluation(40, stock)
                                 took_action = True
 
                             elif action == 'sell' and self.check_if_i_own_stock(stock):
+                                print "SELL PASSIVE"
+
                                 self.sell_stock_evaluation(stock)
                                 took_action = True
+                            else:
+                                took_action = False
 
             if not took_action:
                 print '\nAgent %s takes no action' % self.name
@@ -208,17 +229,27 @@ class BrokerAgent(Agent):
                 self.buy_stock(stock, int(number_of_stocks))
 
         def sell_stock_evaluation(self, stock):
-            print 'sell stock ' + stock
+            print 'SELL STOKA'
+            print stock
 
             if stock['numberOfStocks'] > 0:
                 for s in self.myStocks:
                     # find that stock in list of my stocks and sell it
+                    print s['id'], stock['id']
+
                     if s['id'] != stock['id']:
                         self.sell_stock(stock, s['number'])
 
         def check_if_i_own_stock(self, stock):
+            if len(self.myStocks) == 0:
+                return False
+
             for myStock in self.myStocks:
+                print "VIDI DAL POSJEDUJEM"
+                print myStock
+                print stock
                 if myStock['id'] == stock['id']:
+                    print "YAS I OWN IT"
                     return True
 
             return False
@@ -232,16 +263,17 @@ class BrokerAgent(Agent):
             return False
 
         def add_to_my_stocks(self, data):
-            # if not self.check_if_double_transaction(data['transactionsId']):
-            self.myStocks.append({
-                'transaction': data['transactionsId'],
-                'ip': data['origin'],
-                'price': data['price'],
-                'number': data['amount'],
-            })
-            self.budget -= data['price']
-            print "\nAgent %s bought %d stock %s for %d$\nMoney left: %d$" % (
-                self.name, data['amount'], data['data']['name'], data['price'], self.budget)
+            if not self.check_if_double_transaction(data['transactionsId']):
+                self.myStocks.append({
+                    'id': data['id'],
+                    'transaction': data['transactionsId'],
+                    'ip': data['origin'],
+                    'price': data['price'],
+                    'number': data['amount'],
+                })
+                self.budget -= data['price']
+                print "\nAgent %s bought %d stock %s for %d$\nMoney left: %d$" % (
+                    self.name, data['amount'], data['data']['name'], data['price'], self.budget)
 
         def remove_from_my_stocks(self, data):
             clean = []
@@ -265,7 +297,7 @@ class BrokerAgent(Agent):
 
             self.myAgent.send(self.msg)
 
-            print '\nMessage %s sent to %s' % (content, stock_address)
+            # print '\nMessage %s sent to %s' % (content, stock_address)
 
     def _setup(self):
         stock_template = ACLTemplate()

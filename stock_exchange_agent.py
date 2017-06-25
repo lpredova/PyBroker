@@ -18,7 +18,7 @@ class StockExchange(Agent):
         ip = None
         msg = None
         brokers = 0
-        brokers_total = 0
+        brokers_total = 2
 
         round = 0
         evaluation = 0
@@ -28,7 +28,8 @@ class StockExchange(Agent):
         def initialize(self):
             self.ip = self.getName().split(" ")[0]
             self.stocks = self.stock_generate()
-            self.brokers_total = len(brokers)
+
+            print "\n Generated %d stocks...\n" % len(self.stocks)
 
         # Sends signal that stock exchange is opened for business
         def open_stock_exchange(self):
@@ -86,6 +87,7 @@ class StockExchange(Agent):
             msg_owner_buy_confirm = json.dumps(
                 {
                     'uuid': str(uuid.uuid4()),
+                    'id': stock['id'],
                     'request_type': 'stock_bought',
                     'data': json.dumps(stock),
                     'origin': self.ip,
@@ -127,7 +129,6 @@ class StockExchange(Agent):
             self.kill()
 
         def _process(self):
-            self.initialize()
             self.msg = self._receive(True)
 
             if self.msg:
@@ -139,7 +140,8 @@ class StockExchange(Agent):
                     print "Broker %s signed in %d/%d" % (request['origin'], self.brokers, self.brokers_total)
 
                     # All brokers are registrated
-                    if self.brokers == self.brokers_total:
+                    if self.brokers == 2:
+                        self.initialize()
                         print "Opening stock exchange..."
                         self.open_stock_exchange()
 
@@ -184,7 +186,7 @@ class StockExchange(Agent):
                 self.msg.addReceiver(agent)
                 self.msg.setContent(message)
                 self.myAgent.send(self.msg)
-                print '\nMessage %s sent to %s' % (message, address)
+                # print '\nMessage %s sent to %s' % (message, address)
 
         def send_message(self, message, address):
             agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
@@ -195,7 +197,7 @@ class StockExchange(Agent):
             self.msg.addReceiver(agent)
             self.msg.setContent(message)
             self.myAgent.send(self.msg)
-            print '\nMessage %s sent to %s' % (message, address)
+            # print '\nMessage %s sent to %s' % (message, address)
 
         # Initialize stocks
         def stock_generate(self):
@@ -292,8 +294,8 @@ class StockExchange(Agent):
                     old_stock['numberOfStocks'] -= shares
                     owners = old_stock['owners']
                     transaction = random.randint(1, 100000)
-                    print transaction
                     owners.append({
+                        'id': stock['id'],
                         'transactionId': transaction,
                         'ip': ip,
                         'price': total_price,
