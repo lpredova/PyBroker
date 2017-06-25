@@ -4,6 +4,7 @@ import json
 import random
 import string
 import sys
+import uuid
 
 import spade
 from spade.ACLMessage import ACLMessage
@@ -19,6 +20,9 @@ class StockExchange(Agent):
         brokers = 0
         brokers_total = 0
 
+        round = 0
+        evaluation = 0
+
         stocks = []
 
         def initialize(self):
@@ -30,6 +34,7 @@ class StockExchange(Agent):
         def open_stock_exchange(self):
             msg_sign_in_to_stock_exchange = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_open',
                     'data': None,
                     'origin': self.ip
@@ -42,6 +47,7 @@ class StockExchange(Agent):
         def send_stock_exchange_report(self, origin_ip):
             msg_sign_in_to_stock_exchange = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_report_data',
                     'data': json.dumps(self.stocks),
                     'origin': self.ip
@@ -50,10 +56,24 @@ class StockExchange(Agent):
 
             self.send_message(msg_sign_in_to_stock_exchange, origin_ip)
 
+        # Sends stock exchange state to brokers
+        def broadcast_stock_exchange_report(self):
+            msg_sign_in_to_stock_exchange = json.dumps(
+                {
+                    'uuid': str(uuid.uuid4()),
+                    'request_type': 'stock_report_data',
+                    'data': json.dumps(self.stocks),
+                    'origin': self.ip
+                }
+            )
+
+            self.broadcast_message(msg_sign_in_to_stock_exchange)
+
         # Informs owner that his stock has changed price
         def inform_owner_change(self, stock, origin_ip):
             msg_owner_share_change = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_share_change',
                     'data': json.dumps(stock),
                     'origin': self.ip
@@ -65,6 +85,7 @@ class StockExchange(Agent):
         def send_buy_confirmation(self, stock, origin_ip, price, amount, transaction):
             msg_owner_buy_confirm = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_bought',
                     'data': json.dumps(stock),
                     'origin': self.ip,
@@ -74,12 +95,12 @@ class StockExchange(Agent):
                 }
             )
 
-            print msg_owner_buy_confirm
             self.send_message(msg_owner_buy_confirm, origin_ip)
 
         def send_sell_confirmation(self, stock, origin_ip, price, amount):
             msg_owner_sell_confirm = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_sold',
                     'data': json.dumps(stock),
                     'origin': self.ip,
@@ -95,6 +116,7 @@ class StockExchange(Agent):
         def send_close_stock_exchange(self):
             msg_sign_in_to_stock_exchange = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_close',
                     'data': None,
                     'origin': self.ip
@@ -117,9 +139,22 @@ class StockExchange(Agent):
                     print "Broker %s signed in %d/%d" % (request['origin'], self.brokers, self.brokers_total)
 
                     # All brokers are registrated
-                    if self.brokers == 2:
+                    if self.brokers == self.brokers_total:
                         print "Opening stock exchange..."
                         self.open_stock_exchange()
+
+                # Collect round status from agents
+                if request['request_type'] == 'evaluation_done':
+                    self.evaluation += 1
+                    print "Broker %s done with move round %d status: %d/%d" % (
+                        request['origin'], self.round + 1, self.evaluation, self.brokers_total)
+
+                    if self.evaluation == self.brokers_total:
+                        # Round is over, send new report
+                        self.round += 1
+                        self.evaluation = 0
+                        self.stock_speculate()
+                        self.broadcast_stock_exchange_report()
 
                 # Get stock report
                 if request['request_type'] == 'stock_report':
@@ -137,10 +172,6 @@ class StockExchange(Agent):
                 if request['request_type'] == 'stock_win':
                     print "Broker %s got rich. Closing stock exchange..." % request['origin']
                     self.send_close_stock_exchange()
-                else:
-                    pass
-
-                    # self.stock_speculate()
 
         def broadcast_message(self, message):
             for broker in brokers:
@@ -190,8 +221,7 @@ class StockExchange(Agent):
         # Method that allows trading certain amounts of stocks
         def buy_stock(self, data):
             price = data['stocksToBuy'] * data['data']['price']
-            transactions_id = self.stock_add_owner(data['data'], price, data['stocksToBuy'], data['origin'])
-            print transactions_id
+            self.stock_add_owner(data['data'], price, data['stocksToBuy'], data['origin'])
             print "Agent %s bought %d shares of:%s for %d$" % (
                 data['origin'], data['stocksToBuy'], data['data']['name'], price)
 
@@ -203,61 +233,59 @@ class StockExchange(Agent):
         # Method that changes prices of generated stocks according with tendency
         def stock_speculate(self):
             for stock in self.stocks:
+                delta = 0
                 if stock['tendency'] == 'up':
                     # % of change
-                    change_percentage = random.randint(1, 5) / 100
+                    change_percentage = random.randint(1, 5) / float(100)
                     delta = stock['price'] * change_percentage
                     stock['price'] += delta
-                    self.increase_owner_shares(stock, delta)
 
                 if stock['tendency'] == 'down':
                     # % of change
-                    change_percentage = random.randint(1, 5) / 100
+                    change_percentage = random.randint(1, 5) / float(100)
                     delta = stock['price'] * change_percentage
                     stock['price'] -= delta
-                    self.increase_owner_shares(stock, delta)
 
                 if stock['tendency'] == 'stale':
                     # % of change
-                    change_percentage = random.randint(0, 1) / 100
+                    change_percentage = random.randint(0, 1) / float(100)
                     delta = stock['price'] * change_percentage
                     stock['price'] += delta
-                    self.increase_owner_shares(stock, delta)
 
                 if stock['tendency'] == 'up slow':
                     # % of change
-                    change_percentage = random.randint(5, 10) / 100
+                    change_percentage = random.randint(5, 10) / float(100)
                     delta = stock['price'] * change_percentage
                     stock['price'] += delta
-                    self.increase_owner_shares(stock, delta)
 
                 if stock['tendency'] == 'up fast':
                     # % of change
-                    change_percentage = random.randint(10, 50) / 100
+                    change_percentage = random.randint(10, 50) / float(100)
                     delta = stock['price'] * change_percentage
                     stock['price'] += delta
-                    self.increase_owner_shares(stock, delta)
 
                 if stock['tendency'] == 'down slow':
                     # % of change
-                    change_percentage = random.randint(10, 50) / 100
+                    change_percentage = random.randint(10, 50) / float(100)
                     delta = stock['price'] * change_percentage
                     stock['price'] -= delta
-                    self.increase_owner_shares(stock, delta)
 
                 if stock['tendency'] == 'down fast':
                     # % of change
-                    change_percentage = random.randint(10, 50) / 100
+                    change_percentage = random.randint(10, 50) / float(100)
                     delta = stock['price'] * change_percentage
                     stock['price'] -= delta
-                    self.increase_owner_shares(stock, delta)
+
+                stock['totalValue'] = stock['numberOfStocks'] * stock['price']
+                print stock, delta
+
+                self.increase_owner_shares(stock, delta)
 
         def increase_owner_shares(self, stock, delta):
             if len(stock) > 0:
                 for owner in stock['owners']:
                     owner['price'] = owner['price'] + delta
                     owner['totalPrice'] = owner['totalPrice'] * owner['numberOfShares']
-
                     self.inform_owner_change(stock, owner['ip'])
 
         def stock_add_owner(self, stock, total_price, shares, ip):

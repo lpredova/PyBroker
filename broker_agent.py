@@ -3,6 +3,7 @@
 import json
 import threading
 import time
+import uuid
 
 import spade
 from spade.ACLMessage import ACLMessage
@@ -34,6 +35,7 @@ class BrokerAgent(Agent):
         def sign_in(self):
             msg_sign_in_to_stock_exchange = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_sign_in',
                     'data': None,
                     'origin': self.ip
@@ -42,9 +44,21 @@ class BrokerAgent(Agent):
             stared_brokers.append(self.name)
             self.send_message_to_stock(msg_sign_in_to_stock_exchange)
 
+        def evaluation_done(self):
+            msg_evaluation_done = json.dumps(
+                {
+                    'uuid': str(uuid.uuid4()),
+                    'request_type': 'evaluation_done',
+                    'data': None,
+                    'origin': self.ip
+                }
+            )
+            self.send_message_to_stock(msg_evaluation_done)
+
         def ask_for_report(self):
             msg_stock_exchange_report = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_report',
                     'data': None,
                     'origin': self.ip
@@ -55,6 +69,7 @@ class BrokerAgent(Agent):
         def buy_stock(self, stock, number_of_stocks_to_buy):
             msg_stock_to_buy = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_buy',
                     'data': stock,
                     'origin': self.ip,
@@ -66,6 +81,7 @@ class BrokerAgent(Agent):
         def sell_stock(self, stock, number_of_stocks_to_sell):
             msg_stock_to_sell = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_sell',
                     'data': stock,
                     'origin': self.ip,
@@ -78,6 +94,7 @@ class BrokerAgent(Agent):
             print "Agent %s WON!" % self.name
             msg_stock_win = json.dumps(
                 {
+                    'uuid': str(uuid.uuid4()),
                     'request_type': 'stock_win',
                     'data': None,
                     'origin': self.ip
@@ -106,6 +123,10 @@ class BrokerAgent(Agent):
 
                 if request['request_type'] == 'stock_sold':
                     self.remove_from_my_stocks(request)
+
+                if request['request_type'] == 'stock_share_change':
+                    print "STOCK CHANGE VALUE"
+                    # self.remove_from_my_stocks(request)
 
                 if request['request_type'] == 'stock_close':
                     print 'Agent %s stopped trading, Won %d$' % (self.ip, self.budget)
@@ -174,6 +195,8 @@ class BrokerAgent(Agent):
             if not took_action:
                 print '\nAgent %s takes no action' % self.name
 
+            self.evaluation_done()
+
         def buy_stock_evaluation(self, max_percentage, stock):
 
             if stock['numberOfStocks'] > 0:
@@ -202,24 +225,22 @@ class BrokerAgent(Agent):
         def check_if_double_transaction(self, transaction_id):
             for myStock in self.myStocks:
 
-                print myStock['transaction'], transaction_id
                 if myStock['transaction'] == transaction_id:
                     return True
 
             return False
 
         def add_to_my_stocks(self, data):
-            print "Transactions id:%d" % data['transactionId']
-            if not self.check_if_double_transaction(data['transactionId']):
+            if not self.check_if_double_transaction(data['transactionsId']):
                 self.myStocks.append({
-                    'transaction': data['transactionId'],
+                    'transaction': data['transactionsId'],
                     'ip': data['origin'],
                     'price': data['price'],
                     'number': data['amount'],
                 })
                 self.budget -= data['price']
-                print "Agent %s bought %d stock for %d\n Money left: %d" % (
-                    self.name, data['amount'], data['price'], self.budget)
+                print "\nAgent %s bought %d stock %s for %d$\nMoney left: %d$" % (
+                    self.name, data['amount'], data['data']['name'], data['price'], self.budget)
 
         def remove_from_my_stocks(self, data):
             clean = []
