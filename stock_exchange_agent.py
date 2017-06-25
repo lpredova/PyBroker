@@ -32,9 +32,9 @@ class StockExchange(Agent):
 
             print "\n Generated %d stocks...\n" % len(self.stocks)
             for stock in self.stocks:
-                print stock['id']
-                print stock['name']
-                print stock['price']
+                print 'ID: %d' % stock['id']
+                print 'Name: %s' % stock['name']
+                print 'Price per stock: %d' % stock['price']
             print "\n"
 
         # Sends signal that stock exchange is opened for business
@@ -108,7 +108,7 @@ class StockExchange(Agent):
 
             self.send_message(msg_owner_buy_confirm, origin_ip)
 
-        def send_sell_confirmation(self, stock, origin_ip, price, amount):
+        def send_sell_confirmation(self, stock, origin_ip, price):
             msg_owner_sell_confirm = json.dumps(
                 {
                     'uuid': str(uuid.uuid4()),
@@ -116,11 +116,11 @@ class StockExchange(Agent):
                     'data': json.dumps(stock),
                     'origin': self.ip,
                     'price': price,
-                    'amount': amount
-
+                    'id': stock['id']
                 }
             )
 
+            print "sell_confirmation"
             self.send_message(msg_owner_sell_confirm, origin_ip)
 
         # Closes stock exchange, we have our winner
@@ -184,9 +184,10 @@ class StockExchange(Agent):
                     self.send_close_stock_exchange()
 
         # Initialize stocks
-        def stock_generate(self):
+        @staticmethod
+        def stock_generate():
             result = []
-            number_of_stocks = random.randint(3, 5)
+            number_of_stocks = random.randint(5, 10)
             for i in range(0, number_of_stocks):
                 price = random.randint(10, 1000)
                 result.append(
@@ -213,7 +214,7 @@ class StockExchange(Agent):
 
         def sell_stock(self, data):
             price = data['stocksToSell'] * data['data']['price']
-            self.stock_remove_owner(data['data'], price, data['origin'])
+            self.stock_remove_owner(data['data'], data['origin'])
             print "%s sold %d shares %s for %d" % (data['origin'], data['stocksToSell'], data['data']['name'], price)
 
         # Method that changes prices of generated stocks according with tendency
@@ -295,16 +296,19 @@ class StockExchange(Agent):
                     self.send_buy_confirmation(old_stock, ip, total_price, shares, transaction)
                     return transaction
 
-        def stock_remove_owner(self, stock, shares, ip):
+        def stock_remove_owner(self, stock, ip):
             for old_stock in self.stocks:
                 if old_stock['id'] == stock['id']:
-                    old_stock['shares'] += shares
-
                     owners = old_stock['owners']
                     new = []
+
                     for o in owners:
                         if o['ip'] != ip:
                             new.append(o)
+                        else:
+                            # add to total shares count
+                            old_stock['numberOfStocks'] += o['shares']
+                            self.send_sell_confirmation(stock, ip, o['price'])
 
                     old_stock['owners'] = new
 
@@ -318,6 +322,7 @@ class StockExchange(Agent):
                 self.msg.setLanguage("eng")
                 self.msg.addReceiver(agent)
                 self.msg.setContent(message)
+
                 self.myAgent.send(self.msg)
                 # print '\nMessage %s sent to %s' % (message, address)
 
@@ -329,6 +334,7 @@ class StockExchange(Agent):
             self.msg.setLanguage("eng")
             self.msg.addReceiver(agent)
             self.msg.setContent(message)
+
             self.myAgent.send(self.msg)
             # print '\nMessage %s sent to %s' % (message, address)
 
