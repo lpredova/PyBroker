@@ -21,7 +21,7 @@ class StockExchange(Agent):
         ip = None
         msg = None
         brokers = 0
-        brokers_total = 2
+        brokers_total = 5
 
         round = 0
         evaluation = 0
@@ -151,7 +151,7 @@ class StockExchange(Agent):
                     print "Broker %s signed in %d/%d" % (request['origin'], self.brokers, self.brokers_total)
 
                     # All brokers are registrated
-                    if self.brokers == 2:
+                    if self.brokers == self.brokers_total:
                         self.initialize()
                         print "Opening stock exchange..."
                         self.open_stock_exchange()
@@ -350,7 +350,13 @@ class StockExchange(Agent):
         self.addBehaviour(self.OpenStockExchange(), behaviour)
 
 
-brokers = ['broker1', 'broker2']
+brokers = [
+    'broker1',
+    'broker2',
+    'broker3',
+    'broker4',
+    'broker5',
+]
 
 if __name__ == "__main__":
     try:

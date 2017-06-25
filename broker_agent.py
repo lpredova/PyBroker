@@ -30,8 +30,7 @@ class BrokerAgent(Agent):
             self.ip = self.getName().split(" ")[0]
             self.name = self.getName().split(" ")[0].split("@")[0]
             self.budget = float(random.randint(10000, 50000))
-            # self.behaviour = random.choice(['risky', 'passive', 'cautious'])
-            self.behaviour = random.choice(['risky'])
+            self.behaviour = random.choice(['risky', 'passive', 'cautious'])
 
             print 'Agent %s\nBudget: %d$\nBehaviour: %s' % (self.ip, self.budget, self.behaviour)
 
@@ -303,7 +302,13 @@ class BrokerAgent(Agent):
         self.addBehaviour(settings, mt)
 
 
-brokers = ['broker1', 'broker2']
+brokers = [
+    'broker1',
+    'broker2',
+    'broker3',
+    'broker4',
+    'broker5',
+]
 stared_brokers = []
 
 
