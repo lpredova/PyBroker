@@ -14,7 +14,7 @@ from spade.Behaviour import ACLTemplate, MessageTemplate, Behaviour
 class BrokerAgent(Agent):
     class Speculate(Behaviour):
 
-        win_threshold = 100000
+        win_threshold = float(80000)
         ip = None
         name = None
         behaviour = None
@@ -27,7 +27,7 @@ class BrokerAgent(Agent):
         def initialize(self):
             self.ip = self.getName().split(" ")[0]
             self.name = self.getName().split(" ")[0].split("@")[0]
-            self.budget = random.randint(10000, 50000)
+            self.budget = float(random.randint(10000, 50000))
             # self.behaviour = random.choice(['risky', 'passive', 'cautious'])
             self.behaviour = random.choice(['risky'])
 
@@ -117,7 +117,6 @@ class BrokerAgent(Agent):
                     self.ask_for_report()
 
                 if request['request_type'] == 'stock_report_data':
-                    print "%s primio report" % self.name
                     self.evaluate_stock_state(request['data'])
 
                 if request['request_type'] == 'stock_bought':
@@ -226,18 +225,16 @@ class BrokerAgent(Agent):
                 money_to_spend = self.budget * budget_percentage
 
                 number_of_stocks = money_to_spend / stock['price']
+                print "\nAgent %s trying to buy %d of %s for %d$" % (
+                    self.name, number_of_stocks, stock['name'], money_to_spend)
+
                 self.buy_stock(stock, int(number_of_stocks))
 
         def sell_stock_evaluation(self, stock):
-            print 'SELL STOKA'
-            print stock
-
             if stock['numberOfStocks'] > 0:
                 for s in self.myStocks:
-                    # find that stock in list of my stocks and sell it
-                    print s['id'], stock['id']
-
-                    if s['id'] != stock['id']:
+                    if s['id'] == stock['id']:
+                        print "\nAgent %s trying to sell %s" % (self.name, stock['name'])
                         self.sell_stock(stock, s['number'])
 
         def check_if_i_own_stock(self, stock):
@@ -245,11 +242,7 @@ class BrokerAgent(Agent):
                 return False
 
             for myStock in self.myStocks:
-                print "VIDI DAL POSJEDUJEM"
-                print myStock
-                print stock
                 if myStock['id'] == stock['id']:
-                    print "YAS I OWN IT"
                     return True
 
             return False
@@ -271,19 +264,23 @@ class BrokerAgent(Agent):
                     'price': data['price'],
                     'number': data['amount'],
                 })
-                self.budget -= data['price']
-                print "\nAgent %s bought %d stock %s for %d$\nMoney left: %d$" % (
-                    self.name, data['amount'], data['data']['name'], data['price'], self.budget)
+
+                self.budget -= float(data['price'])
+                print "\nAgent %s bought %d stock of %s for %d$\nMoney left: %d$" % (
+                    self.name, data['amount'], data['name'], data['price'], self.budget)
 
         def remove_from_my_stocks(self, data):
             clean = []
-
+            print "REMOVING FROM MY STOCKS"
             for stock in self.myStocks:
                 if stock['id'] != data['data']['id']:
                     clean.append(stock)
 
             self.myStocks = clean
-            self.budget += data['price']
+            self.budget += float(data['price'])
+
+        def adjust_stock_prices(self,data):
+            pass
 
         def send_message_to_stock(self, content):
             stock_address = 'stock@127.0.0.1'
@@ -297,7 +294,7 @@ class BrokerAgent(Agent):
 
             self.myAgent.send(self.msg)
 
-            # print '\nMessage %s sent to %s' % (content, stock_address)
+            print '\nMessage %s sent to %s' % (content, stock_address)
 
     def _setup(self):
         stock_template = ACLTemplate()

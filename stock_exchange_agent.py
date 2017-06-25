@@ -4,6 +4,7 @@ import json
 import random
 import string
 import sys
+import time
 import uuid
 
 import spade
@@ -88,6 +89,7 @@ class StockExchange(Agent):
                 {
                     'uuid': str(uuid.uuid4()),
                     'id': stock['id'],
+                    'name': stock['name'],
                     'request_type': 'stock_bought',
                     'data': json.dumps(stock),
                     'origin': self.ip,
@@ -156,7 +158,6 @@ class StockExchange(Agent):
                         self.round += 1
                         self.evaluation = 0
                         self.stock_speculate()
-                        self.broadcast_stock_exchange_report()
 
                 # Get stock report
                 if request['request_type'] == 'stock_report':
@@ -174,30 +175,6 @@ class StockExchange(Agent):
                 if request['request_type'] == 'stock_win':
                     print "Broker %s got rich. Closing stock exchange..." % request['origin']
                     self.send_close_stock_exchange()
-
-        def broadcast_message(self, message):
-            for broker in brokers:
-                address = "%s@127.0.0.1" % broker
-                agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
-                self.msg = ACLMessage()
-                self.msg.setPerformative("inform")
-                self.msg.setOntology("stock")
-                self.msg.setLanguage("eng")
-                self.msg.addReceiver(agent)
-                self.msg.setContent(message)
-                self.myAgent.send(self.msg)
-                # print '\nMessage %s sent to %s' % (message, address)
-
-        def send_message(self, message, address):
-            agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
-            self.msg = ACLMessage()
-            self.msg.setPerformative("inform")
-            self.msg.setOntology("stock")
-            self.msg.setLanguage("eng")
-            self.msg.addReceiver(agent)
-            self.msg.setContent(message)
-            self.myAgent.send(self.msg)
-            # print '\nMessage %s sent to %s' % (message, address)
 
         # Initialize stocks
         def stock_generate(self):
@@ -250,7 +227,7 @@ class StockExchange(Agent):
 
                 if stock['tendency'] == 'stale':
                     # % of change
-                    change_percentage = random.randint(0, 1) / float(100)
+                    change_percentage = random.randint(1, 1) / float(100)
                     delta = stock['price'] * change_percentage
                     stock['price'] += delta
 
@@ -281,11 +258,15 @@ class StockExchange(Agent):
                 stock['totalValue'] = stock['numberOfStocks'] * stock['price']
                 self.increase_owner_shares(stock, delta)
 
+            print "Starting new round of trading..."
+            time.sleep(2)
+            self.broadcast_stock_exchange_report()
+
         def increase_owner_shares(self, stock, delta):
+
             if len(stock) > 0:
                 for owner in stock['owners']:
-                    owner['price'] = owner['price'] + delta
-                    owner['totalPrice'] = owner['totalPrice'] * owner['numberOfShares']
+                    owner['price'] = float(owner['price']) + float(delta)
                     self.inform_owner_change(stock, owner['ip'])
 
         def stock_add_owner(self, stock, total_price, shares, ip):
@@ -296,6 +277,7 @@ class StockExchange(Agent):
                     transaction = random.randint(1, 100000)
                     owners.append({
                         'id': stock['id'],
+                        'name': stock['name'],
                         'transactionId': transaction,
                         'ip': ip,
                         'price': total_price,
@@ -318,6 +300,30 @@ class StockExchange(Agent):
                             new.append(o)
 
                     old_stock['owners'] = new
+
+        def broadcast_message(self, message):
+            for broker in brokers:
+                address = "%s@127.0.0.1" % broker
+                agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
+                self.msg = ACLMessage()
+                self.msg.setPerformative("inform")
+                self.msg.setOntology("stock")
+                self.msg.setLanguage("eng")
+                self.msg.addReceiver(agent)
+                self.msg.setContent(message)
+                self.myAgent.send(self.msg)
+                # print '\nMessage %s sent to %s' % (message, address)
+
+        def send_message(self, message, address):
+            agent = spade.AID.aid(name=address, addresses=["xmpp://%s" % address])
+            self.msg = ACLMessage()
+            self.msg.setPerformative("inform")
+            self.msg.setOntology("stock")
+            self.msg.setLanguage("eng")
+            self.msg.addReceiver(agent)
+            self.msg.setContent(message)
+            self.myAgent.send(self.msg)
+            # print '\nMessage %s sent to %s' % (message, address)
 
     def _setup(self):
         print "\nVAS Stock exchange\t%s\tis up" % self.getAID().getAddresses()
