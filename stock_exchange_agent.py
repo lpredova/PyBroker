@@ -120,7 +120,6 @@ class StockExchange(Agent):
                 }
             )
 
-            print "sell_confirmation"
             self.send_message(msg_owner_sell_confirm, origin_ip)
 
         # Closes stock exchange, we have our winner
